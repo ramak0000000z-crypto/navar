@@ -1,5 +1,5 @@
 /* Навар — офлайн-кэш. Сгенерировано build.js, руками не править. */
-var CACHE = "navar-navar-l5byox";
+var CACHE = "navar-navar-1w0h1ne";
 var ASSETS = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png"];
 self.addEventListener("install", function(e){
   e.waitUntil(caches.open(CACHE).then(function(c){ return c.addAll(ASSETS); }).then(function(){ return self.skipWaiting(); }));
