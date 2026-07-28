@@ -26,9 +26,99 @@ function build(tplName, outName) {
 build("navar.tpl.html", "navar.html");
 build("navar-auto.tpl.html", "navar-auto.html");
 
-// копии для GitHub Pages: /navar и /avto
-for (const [src, dir] of [["navar.html", "navar"], ["navar-auto.html", "avto"]]) {
-  fs.mkdirSync(path.join(ROOT, dir), { recursive: true });
-  fs.copyFileSync(path.join(ROOT, src), path.join(ROOT, dir, "index.html"));
-  console.log("copied " + src + " -> " + dir + "/index.html");
+/* ---------- копии для GitHub Pages + установка на телефон (PWA) ----------
+   Принцип «один самодостаточный файл» не нарушен: navar.html и navar-auto.html
+   в корне остаются чистыми и работают с file://. Манифест, иконки и офлайн-кэш
+   добавляются ТОЛЬКО в копии для сайта (navar/ и avto/). */
+
+// версия кэша: меняется при каждой правке продукта, иначе телефон покажет старое
+function buildStamp(file) {
+  const src = fs.readFileSync(path.join(ROOT, file), "utf8");
+  let h = 5381;
+  for (let i = 0; i < src.length; i++) h = ((h * 33) ^ src.charCodeAt(i)) >>> 0;
+  return h.toString(36);
+}
+
+const PRODUCTS = [
+  { src: "navar.html", dir: "navar", icon: "navar",
+    name: "Навар · Авито", short: "Навар", color: "#22C55E",
+    desc: "Сколько ты реально зарабатываешь на Авито: комиссия с минимальным удержанием, доставка, продвижение, невыкупы и налог." },
+  { src: "navar-auto.html", dir: "avto", icon: "avto",
+    name: "Навар.Авто", short: "Навар.Авто", color: "#F59E0B",
+    desc: "Сделка перекупа до того, как отданы деньги: навар со сделки и в день, потолок торга, стресс-тест «зависла»." },
+];
+
+for (const p of PRODUCTS) {
+  const dir = path.join(ROOT, p.dir);
+  fs.mkdirSync(dir, { recursive: true });
+
+  const stamp = buildStamp(p.src);
+  const html = fs.readFileSync(path.join(ROOT, p.src), "utf8");
+
+  // блок установки — только для копии на сайте
+  const head = [
+    '<link rel="manifest" href="manifest.json">',
+    '<meta name="theme-color" content="#101418">',
+    '<link rel="apple-touch-icon" href="icon-192.png">',
+    '<meta name="apple-mobile-web-app-capable" content="yes">',
+    '<meta name="apple-mobile-web-app-title" content="' + p.short + '">',
+  ].join("\n");
+  const tail =
+    '<script>if("serviceWorker" in navigator&&location.protocol!=="file:"){' +
+    'addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}</script>';
+
+  const page = html
+    .replace("</head>", head + "\n</head>")
+    .replace("</body>", tail + "\n</body>");
+  fs.writeFileSync(path.join(dir, "index.html"), page, "utf8");
+
+  fs.writeFileSync(path.join(dir, "manifest.json"), JSON.stringify({
+    name: p.name,
+    short_name: p.short,
+    description: p.desc,
+    start_url: ".",
+    scope: ".",
+    display: "standalone",
+    orientation: "portrait",
+    background_color: "#101418",
+    theme_color: "#101418",
+    lang: "ru",
+    icons: [
+      { src: "icon-192.png", sizes: "192x192", type: "image/png", purpose: "any maskable" },
+      { src: "icon-512.png", sizes: "512x512", type: "image/png", purpose: "any maskable" },
+    ],
+  }, null, 2), "utf8");
+
+  for (const size of [192, 512]) {
+    fs.copyFileSync(
+      path.join(ROOT, "pwa", "icons", p.icon + "-" + size + ".png"),
+      path.join(dir, "icon-" + size + ".png"));
+  }
+
+  // офлайн-кэш: отдаём из кэша, в фоне обновляем; старые версии сносим
+  fs.writeFileSync(path.join(dir, "sw.js"),
+`/* Навар — офлайн-кэш. Сгенерировано build.js, руками не править. */
+var CACHE = "navar-${p.dir}-${stamp}";
+var ASSETS = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png"];
+self.addEventListener("install", function(e){
+  e.waitUntil(caches.open(CACHE).then(function(c){ return c.addAll(ASSETS); }).then(function(){ return self.skipWaiting(); }));
+});
+self.addEventListener("activate", function(e){
+  e.waitUntil(caches.keys().then(function(keys){
+    return Promise.all(keys.filter(function(k){ return k !== CACHE; }).map(function(k){ return caches.delete(k); }));
+  }).then(function(){ return self.clients.claim(); }));
+});
+self.addEventListener("fetch", function(e){
+  if(e.request.method !== "GET") return;
+  e.respondWith(
+    fetch(e.request).then(function(res){
+      var copy = res.clone();
+      caches.open(CACHE).then(function(c){ c.put(e.request, copy); });
+      return res;
+    }).catch(function(){ return caches.match(e.request).then(function(m){ return m || caches.match("./index.html"); }); })
+  );
+});
+`, "utf8");
+
+  console.log("deployed " + p.src + " -> " + p.dir + "/ (устанавливается на телефон, кэш " + stamp + ")");
 }
