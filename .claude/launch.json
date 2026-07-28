@@ -4,7 +4,7 @@
     {
       "name": "navar-static",
       "runtimeExecutable": "C:\\Users\\alexr\\AppData\\Local\\Programs\\node\\node.exe",
-      "runtimeArgs": ["C:\\Users\\alexr\\AppData\\Local\\Temp\\claude\\E--navar\\71c4c984-6513-48a0-b4f4-87f078485f86\\scratchpad\\static-server.js"],
+      "runtimeArgs": [".claude\\dev-server.js"],
       "port": 8123
     }
   ]
