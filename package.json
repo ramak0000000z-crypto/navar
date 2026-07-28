@@ -1,1 +1,1 @@
-{ "name": "navar-pipeline", "private": true, "scripts": { "check": "node runner.js" }, "dependencies": { "jsdom": "^24.0.0" } }
+{ "name": "navar-pipeline", "private": true, "scripts": { "check": "node runner.js", "build": "node build.js" }, "dependencies": { "jsdom": "^24.0.0" } }

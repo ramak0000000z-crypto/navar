@@ -1,0 +1,23 @@
+# Общие блоки линейки «Навар» (генерировано из байт-в-байт совпадений)
+
+- shared/s01.inc — 11 строк, 384 байт: «<!DOCTYPE html>»
+- shared/s02.inc — 12 строк, 514 байт: «<style>»
+- shared/s03.inc — 5 строк, 291 байт: «.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}»
+- shared/s04.inc — 15 строк, 976 байт: «.panel{background:var(--paper);color:var(--ink);border-radius:var(--radius);over»
+- shared/s05.inc — 15 строк, 819 байт: «input.fin:focus{outline:none;border-color:var(--green-deep);box-shadow:0 0 0 3px»
+- shared/s06.inc — 16 строк, 1250 байт: «.verdict{position:sticky;top:16px;background:var(--panel);border:1px solid var(-»
+- shared/s07.inc — 10 строк, 572 байт: «.waterfall{margin:20px 0 4px}»
+- shared/s08.inc — 7 строк, 288 байт: «.m-row{display:flex;justify-content:space-between;font-size:13px;margin-bottom:7»
+- shared/s09.inc — 15 строк, 932 байт: «.compare{max-width:1140px;margin:0 auto 22px;padding:0 24px}»
+- shared/s10.inc — 4 строк, 223 байт: «.name-inline:focus{outline:none;border-color:var(--green-deep)}»
+- shared/table-css.inc — 36 строк, 1883 байт: «table.cmp th:first-child{text-align:left}»
+- shared/s12.inc — 7 строк, 507 байт: «<button class="btn" id="export-items">Экспорт в файл</button>»
+- shared/lzstring.inc — 16 строк, 5294 байт: «</footer>»
+- shared/fmt-utils.inc — 18 строк, 1006 байт: «function pct0(n){ return (n>=0?"":"−") + Math.abs(n).toFixed(0) + "%"; }»
+- shared/s15.inc — 7 строк, 325 байт: «var bar = document.getElementById("wf-bar"), legend = document.getElementById("w»
+- shared/hash-persist.inc — 77 строк, 4088 байт: «var hashTimer = null;»
+- shared/s17.inc — 6 строк, 233 байт: «function computeItem(name, taxMode, inp){»
+- shared/table-sort.inc — 34 строк, 1619 байт: «var sortState = {key:null, dir:-1};»
+- shared/s19.inc — 8 строк, 499 байт: «document.getElementById("import-items").addEventListener("click", function(){»
+- shared/s20.inc — 13 строк, 473 байт: «if(window.__navarPendingItems){»
+- shared/s21.inc — 6 строк, 255 байт: «data.items.forEach(function(it){»

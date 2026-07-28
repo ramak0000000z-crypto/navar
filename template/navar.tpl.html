@@ -1,0 +1,526 @@
+<<<INC:s01>>>
+<title>Навар — сколько ты реально зарабатываешь на Авито</title>
+<meta name="description" content="Бесплатный калькулятор прибыли для продавцов на Авито: комиссия с учётом минимального удержания, продвижение, невыкупы и налог. Работает офлайн, данные не покидают браузер.">
+<<<INC:s02>>>
+  body{
+    font-family:var(--sans);background:var(--bg);color:var(--text);
+    line-height:1.45;-webkit-font-smoothing:antialiased;
+  }
+<<<INC:s03>>>
+  .tag{font-size:13.5px;color:var(--muted)}
+
+  .wrap{
+    max-width:1140px;margin:0 auto;padding:14px 24px 60px;
+    display:grid;grid-template-columns:1fr 410px;gap:22px;align-items:start;
+  }
+  @media(max-width:920px){.wrap{grid-template-columns:1fr;gap:16px}}
+
+  /* ---------- inputs (light "paper" side — как объявление) ---------- */
+<<<INC:s04>>>
+    padding:11px 42px 11px 13px;transition:border-color .12s,box-shadow .12s;
+    font-variant-numeric:tabular-nums;
+<<<INC:s05>>>
+  /* эффективная комиссия чип */
+  .eff{
+    margin-top:12px;display:flex;align-items:center;gap:10px;
+    background:#fff;border:1.5px dashed var(--paper-line);border-radius:var(--radius-sm);padding:10px 14px;
+  }
+  .eff .k{font-size:12px;color:var(--ink-mut);font-weight:600}
+  .eff .v{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums;margin-left:auto}
+  .eff .v.ok{color:var(--green-deep)}
+  .eff .v.warn{color:#D97E13}
+  .eff .v.bad{color:#D8383D}
+  .eff-note{font-size:11.5px;color:var(--ink-mut);margin-top:7px;line-height:1.5}
+
+  /* ---------- verdict (dark side — изнанка сделки) ---------- */
+<<<INC:s06>>>
+  .metric .v{font-size:18px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-0.02em}
+<<<INC:s07>>>
+  .targets{margin-top:20px;padding-top:18px;border-top:1px solid var(--line);display:grid;gap:12px}
+  .target-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .target-row .tl{font-size:12.5px;color:var(--muted)}
+  .target-row .tv{font-size:15px;font-weight:800;font-variant-numeric:tabular-nums}
+  .target-row .tv.warn{color:var(--red)}
+  .mini{
+    width:66px;background:var(--panel-2);border:1px solid var(--line);color:#fff;
+    border-radius:8px;padding:5px 8px;font-family:var(--sans);font-size:16px;font-weight:700;text-align:right;
+    font-variant-numeric:tabular-nums;
+  }
+  .mini:focus{outline:none;border-color:var(--green-deep)}
+
+  .monthly{margin-top:18px;padding:14px 16px;background:var(--panel-2);border:1px solid var(--line);border-radius:var(--radius-sm)}
+  .monthly-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  .monthly-head .lbl{font-size:12.5px;color:var(--muted);font-weight:700}
+<<<INC:s08>>>
+  /* ---------- сравнение товаров ---------- */
+<<<INC:s09>>>
+    padding:9px 12px;font-family:var(--sans);font-size:16px;font-weight:600;width:180px;
+<<<INC:s10>>>
+  table.cmp th{
+    text-align:right;font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.02em;
+    padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap;
+  }
+<<<INC:table-css>>>
+<div class="stickybar" style="cursor:pointer" onclick="var v=document.querySelector('.verdict'); if(v&&v.scrollIntoView) v.scrollIntoView({behavior:'smooth'})"><span class="sb-k">Навар с продажи</span><span class="sb-v pos num" id="sb-profit" aria-live="polite">—</span></div>
+
+<header>
+  <span class="logo">Нав<span class="ru">ар</span></span>
+  <span class="tag">сколько ты реально зарабатываешь на Авито — с учётом комиссии, продвижения и невыкупов</span>
+</header>
+<div style="max-width:1140px;margin:0 auto;padding:0 24px 8px;font-size:13px;color:#8D99A6;line-height:1.5">Начни с двух цифр — <b style="color:#F2F5F7">закупка</b> и <b style="color:#F2F5F7">цена в объявлении</b>. Остальные поля можно не трогать: получишь честную первую прикидку, потом уточнишь.</div>
+
+<div class="wrap">
+
+  <!-- ===== INPUTS ===== -->
+  <div class="panel">
+
+    <div class="group">
+      <div class="group-head">
+        <span class="group-title">Товар</span>
+        <span class="group-note">цифры-примеры — впиши свои</span>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="cost">Закупка / себестоимость</label>
+          <div class="input-wrap"><input type="text" class="fin" inputmode="decimal" id="cost" data-money value="400" min="0"><span class="unit">₽</span></div>
+        </div>
+        <div class="field">
+          <label for="price">Цена в объявлении</label>
+          <div class="input-wrap"><input type="text" class="fin" inputmode="decimal" id="price" data-money value="1200" min="0"><span class="unit">₽</span></div>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="pack">Упаковка + дорога до ПВЗ, на заказ</label>
+          <div class="input-wrap"><input type="text" class="fin" inputmode="decimal" id="pack" data-money value="40" min="0"><span class="unit">₽</span></div>
+        </div>
+        <div class="field">
+          <label for="cancel">Отмены и невыкупы (только по заказам с доставкой)</label>
+          <div class="input-wrap"><input type="text" class="fin" inputmode="decimal" id="cancel" value="15" min="0" max="90"><span class="unit">%</span></div>
+        </div>
+      </div>
+    </div>
+
+    <button class="adv-toggle" id="adv-toggle">Точная настройка: комиссия, продвижение, налоги ▾</button>
+    <div class="group advanced">
+      <div class="group-head">
+        <span class="group-title">Авито Доставка</span>
+        <span class="group-note">ставка видна при создании объявления — впишите свою</span>
+      </div>
+      <div class="field">
+        <label for="share">Доля продаж через Авито Доставку (остальное — из рук в руки, без комиссии)</label>
+        <div class="input-wrap"><input type="text" inputmode="decimal" class="fin" id="share" value="100"><span class="unit">%</span></div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="commission">Комиссия с продажи</label>
+          <div class="input-wrap"><input type="text" class="fin" inputmode="decimal" id="commission" value="6" min="0" max="50"><span class="unit">%</span></div>
+        </div>
+        <div class="field">
+          <label for="minfee">Минимальное удержание</label>
+          <div class="input-wrap"><input type="text" class="fin" inputmode="decimal" id="minfee" data-money value="150" min="0"><span class="unit">₽</span></div>
+        </div>
+      </div>
+      <div class="field">
+        <label for="delivery">Стоимость доставки для покупателя (комиссия считается с товара + доставки)</label>
+        <div class="input-wrap"><input type="text" class="fin" inputmode="decimal" id="delivery" data-money value="300" min="0"><span class="unit">₽</span></div>
+      </div>
+      <div class="field">
+        <label for="retdeliv">Обратная доставка при невыкупе (0 — если на вашем тарифе бесплатно)</label>
+        <div class="input-wrap"><input type="text" inputmode="decimal" class="fin" data-money id="retdeliv" value="0"><span class="unit">₽</span></div>
+      </div>
+      <div class="eff">
+        <span class="k">Эффективная комиссия с этой цены</span>
+        <span class="v ok num" id="effcomm">—</span>
+      </div>
+      <div class="eff-note" id="effnote"></div>
+    </div>
+
+    <div class="group advanced">
+      <div class="group-head">
+        <span class="group-title">Продвижение и размещение</span>
+        <span class="group-note">раскидаем бюджет на каждую продажу</span>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="drr">ДРР — доля рекламных расходов от цены (до 10% — отлично, ~12% — норма)</label>
+          <div class="input-wrap"><input type="text" inputmode="decimal" class="fin" id="drr" value="5"><span class="unit">%</span></div>
+          <div class="eff-note" id="drr-rub"></div>
+        </div>
+        <div class="field">
+          <label for="placement">Платные размещения в месяц</label>
+          <div class="input-wrap"><input type="text" class="fin" inputmode="decimal" id="placement" data-money value="0" min="0"><span class="unit">₽</span></div>
+        </div>
+      </div>
+      <div class="field">
+        <label for="volume">Продаж в месяц</label>
+        <div class="input-wrap"><input type="text" class="fin" inputmode="decimal" id="volume" value="40" min="1"><span class="unit">шт</span></div>
+      </div>
+    </div>
+
+    <div class="group advanced">
+      <div class="group-head">
+        <span class="group-title">Налог</span>
+      </div>
+      <div class="seg" id="tax-seg">
+        <button data-tax="none" class="on">Частник<small>без налога</small></button>
+        <button data-tax="npd">Самозанятый<small>только своё производство</small></button>
+        <button data-tax="usn6">ИП УСН<small>6% с дохода</small></button>
+        <button data-tax="usn15">ИП УСН<small>15%, мин. 1% с дохода</small></button>
+      </div>
+      <div id="npd-warn" style="display:none;margin-top:10px;font-size:12px;font-weight:700;color:#D8383D;line-height:1.5">НПД не подходит для перепродажи купленных товаров — только для продукции собственного производства. Для перепродажи выбирай ИП УСН.</div>
+    </div>
+
+  </div>
+
+  <!-- ===== VERDICT ===== -->
+  <div class="verdict">
+    <div class="v-label">Навар с одной продажи</div>
+    <div class="v-hero">
+      <span class="v-profit pos num" id="profit" aria-live="polite">—</span>
+      <span class="v-per">₽ / шт</span>
+    </div>
+    <span class="v-status pos" id="status"><span class="dot"></span><span id="status-txt">—</span></span>
+
+    <div class="metrics">
+      <div class="metric"><div class="k">Маржа</div><div class="v num" id="margin">—</div></div>
+      <div class="metric"><div class="k">Наценка</div><div class="v num" id="markup">—</div></div>
+      <div class="metric"><div class="k">Забирает Авито</div><div class="v num" id="avitoshare">—</div></div>
+    </div>
+
+    <div class="waterfall">
+      <div class="wf-title">Куда уходит цена из объявления</div>
+      <div class="wf-bar" id="wf-bar"></div>
+      <div class="wf-legend" id="wf-legend"></div>
+    </div>
+
+    <div class="targets">
+      <div class="target-row">
+        <span class="tl">Минимальная цена, чтобы не уйти в минус</span>
+        <span class="tv num" id="breakeven">—</span>
+      </div>
+      <div class="target-row">
+        <span class="tl">Заложить комиссию в цену — но сверь с конкурентами</span>
+        <span class="tv num" id="passfee">—</span>
+      </div>
+      <div class="target-row">
+        <span class="tl">Цена, чтобы маржа была
+          <input type="text" inputmode="decimal" class="mini num fin" id="targetm" value="25" min="0" max="90">%
+        </span>
+        <span class="tv num" id="targetprice">—</span>
+      </div>
+    </div>
+
+    <div class="monthly">
+      <div class="monthly-head"><span class="lbl">Итог за месяц</span></div>
+      <div class="m-row"><span class="mk">Выручка</span><span class="mv num" id="m-rev">—</span></div>
+      <div class="m-row"><span class="mk">Комиссия + продвижение Авито</span><span class="mv num" id="m-avito">—</span></div>
+      <div class="m-row"><span class="mk">Чистый навар</span><span class="mv num pos" id="m-profit">—</span></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="compare">
+  <div class="compare-panel">
+    <div class="compare-head">
+      <div>
+        <div class="compare-title">Мои товары</div>
+        <div class="compare-sub">Сохраняй расчёты и сравнивай, что выгоднее возить. Данные живут, пока открыта вкладка: закроешь — сотрутся. Жми «Экспорт в файл», чтобы сохранить.</div>
+      </div>
+      <div class="compare-actions">
+        <input type="text" class="name-inline" id="itemname" placeholder="Название товара" maxlength="40">
+        <button class="btn primary" id="save-item">Сохранить расчёт</button>
+<<<INC:s12>>>
+    <div class="compare-empty" id="cmp-empty">Пока пусто. Заполни расчёт выше, впиши название и нажми «Сохранить расчёт» — товар появится здесь для сравнения.</div>
+    <div class="cmp-scroll">
+      <table class="cmp" id="cmp-table" style="display:none">
+        <thead><tr>
+          <th data-key="name">Товар ⇅</th><th data-key="price">Цена ⇅</th><th data-key="cost">Закупка ⇅</th><th data-key="net">Навар/шт ⇅</th><th data-key="margin">Маржа ⇅</th><th data-key="avitoShare">Забирает Авито ⇅</th><th data-key="tax">Налог ⇅</th><th data-key="monthly">Навар/мес ⇅</th><th></th>
+        </tr></thead>
+        <tbody id="cmp-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <b>Навар</b> v4.1 · формулы и ориентиры ставок сверены: июль 2026 · © 2026 Навар, все права защищены. Считает всё в браузере, ничего никуда не отправляет и работает без интернета. Комиссия Авито зависит от категории, региона и тарифа (2–13,5% с минимальным удержанием) — точную ставку смотрите при создании своего объявления и вписывайте сюда. Расчёт справочный, налоги упрощены (НПД 4% — при продаже физлицам; для перепродажи товаров режим НПД не подходит юридически — уточняйте у налоговой; с 2026 года на УСН при доходе свыше 20 млн ₽ за прошлый год добавляется НДС — здесь он не учтён). Это не налоговая консультация.
+<<<INC:lzstring>>>
+  function pct1(n){ return (n>=0?"":"−") + Math.abs(n).toFixed(1).replace(".",",") + "%"; }
+<<<INC:fmt-utils>>>
+  // fee charged by Avito for a sale at price p
+  function avitoFee(p, deliv, c, minfee){
+    var f = (p + deliv) * c;
+    return Math.max(f, minfee);
+  }
+
+  // net profit per sold unit at price p
+  function netAt(p, o){
+    var fee = o.share * avitoFee(p, o.deliv, o.c, o.minfee);
+    var pre = p - o.cost - o.packEff - fee - p*o.drr - o.placementUnit - o.retCost;
+    var t = 0;
+    if(tax === "npd")  t = p * 0.04;
+    if(tax === "usn6") t = p * 0.06;
+    if(tax === "usn15") t = Math.max(pre > 0 ? pre * 0.15 : 0, p * 0.01);
+    return pre - t;
+  }
+
+  // find price where net crosses target margin m (m=0 → breakeven), numeric & piecewise-safe
+  function priceFor(mTarget, o){
+    var lo = 1, hi = 1000000;
+    if(netAt(hi,o) - mTarget*hi < 0) return NaN; // unreachable
+    for(var i=0;i<60;i++){
+      var mid = (lo+hi)/2;
+      if(netAt(mid,o) - mTarget*mid >= 0) hi = mid; else lo = mid;
+    }
+    return hi;
+  }
+
+  function recompute(){
+    var cost = val("cost"), price = val("price"), pack = val("pack");
+    var cancel = Math.max(0, Math.min(90, val("cancel")))/100;
+    var c = val("commission")/100, minfee = val("minfee"), deliv = val("delivery");
+    var placement = val("placement");
+    var volume = Math.max(1, val("volume"));
+    var share = Math.max(0, Math.min(100, val("share")))/100;
+    var drr = Math.max(0, Math.min(90, val("drr")))/100;
+
+    // упаковка: на каждый заказ доставки (с невыкупами) и по разу на продажу из рук в руки
+    var ship = 1 / (1 - cancel);
+    var packEff = pack * (share*ship + (1-share));
+    var placementUnit = placement / volume;
+    var retCost = share * val("retdeliv") * (ship - 1);
+
+    var o = {cost:cost, packEff:packEff, c:c, minfee:minfee, deliv:deliv, share:share, drr:drr, placementUnit:placementUnit, retCost:retCost};
+
+    var fee = o.share * avitoFee(price, deliv, c, minfee);
+    var net = netAt(price, o);
+    var advUnit = price*drr + placementUnit;
+    document.getElementById("drr-rub").textContent = "≈ " + fmt(price*drr) + " ₽ рекламы с каждой продажи. Поднятие за 149 ₽ окупается, если даёт продажу дороже " + fmt(drr>0 ? 149/drr : 0) + " ₽.";
+    var preTaxFee = fee + advUnit + retCost; // всё, что уходит Авито
+
+    // ---- effective commission chip ----
+    var fullFee = avitoFee(price, deliv, c, minfee);
+    var effc = price > 0 ? fullFee/price*100 : 0;
+    var effEl = document.getElementById("effcomm");
+    effEl.textContent = pct1(effc);
+    effEl.className = "v num " + (effc <= c*100 + 1 ? "ok" : (effc <= c*100*2 ? "warn" : "bad"));
+    var note = document.getElementById("effnote");
+    if(fullFee === minfee && minfee > 0 && price > 0){
+      note.textContent = "Сработало минимальное удержание " + fmt(minfee) + " ₽ — на этой цене номинальные " + pct1(c*100) + " превращаются в " + pct1(effc) + ". Дешёвый товар Авито «ест» сильнее.";
+    } else {
+      note.textContent = "Комиссия начисляется на товар + доставку (" + fmt(price+deliv) + " ₽), поэтому с цены объявления выходит " + pct1(effc) + ", а не " + pct1(c*100) + ".";
+    }
+
+    document.getElementById("npd-warn").style.display = (tax==="npd") ? "block" : "none";
+
+    // ---- hero ----
+    var pEl = document.getElementById("profit");
+    pEl.textContent = fmt(net);
+    pEl.className = "v-profit num " + (net >= 0 ? "pos" : "neg");
+    var sb = document.getElementById("sb-profit");
+    sb.textContent = fmt(net) + " ₽";
+    sb.className = "sb-v num " + (net >= 0 ? "pos" : "neg");
+    scheduleHash();
+    var stEl = document.getElementById("status"), stTxt = document.getElementById("status-txt");
+    if(net >= 0){ stEl.className = "v-status pos"; stTxt.textContent = "В плюс"; }
+    else { stEl.className = "v-status neg"; stTxt.textContent = "Работаешь в минус"; }
+
+    // ---- metrics ----
+    var margin = price>0 ? net/price*100 : 0;
+    var markup = cost>0 ? net/cost*100 : 0;
+    var avitoshare = price>0 ? preTaxFee/price*100 : 0;
+    document.getElementById("margin").textContent = pct0(margin);
+    document.getElementById("markup").textContent = pct0(markup);
+    document.getElementById("avitoshare").textContent = pct0(avitoshare);
+
+    // ---- waterfall ----
+    var taxAmt = 0;
+    var preProfit = price - cost - packEff - fee - advUnit - retCost;
+    if(tax==="npd") taxAmt = price*0.04;
+    if(tax==="usn6") taxAmt = price*0.06;
+    if(tax==="usn15") taxAmt = preProfit>0 ? preProfit*0.15 : 0;
+
+    var parts = [
+      {k:"Закупка",            v:cost,      c:"#7A828C"},
+      {k:"Комиссия Авито",     v:fee,       c:"#2FD574", cc:"#1FA85A"},
+      {k:"Продвижение",        v:advUnit,   c:"#4AA3FF"},
+      {k:"Упаковка и невыкупы",v:packEff,   c:"#B48CFF"},
+      {k:"Обратка невыкупов",  v:retCost,   c:"#D67BA8"},
+      {k:"Налог",              v:taxAmt,    c:"#F5B84D"}
+    ];
+    var costsSum = parts.reduce(function(s,p){return s+p.v},0);
+    var denom = Math.max(price, costsSum);
+<<<INC:s15>>>
+      seg.style.background = p.cc || p.c;
+      bar.appendChild(seg);
+      var it = document.createElement("div");
+      it.className = "wf-item";
+      it.innerHTML = '<span class="sw" style="background:'+(p.cc||p.c)+'"></span>'+p.k+' <span class="amt">'+fmt(p.v)+'₽</span>';
+      legend.appendChild(it);
+    });
+    if(net > 0){
+      var seg2 = document.createElement("div");
+      seg2.className = "wf-seg";
+      seg2.style.width = (net/denom*100)+"%";
+      seg2.style.background = "#EAF2F7";
+      bar.appendChild(seg2);
+      var it2 = document.createElement("div");
+      it2.className = "wf-item";
+      it2.innerHTML = '<span class="sw" style="background:#EAF2F7"></span>Твой навар <span class="amt">'+fmt(net)+'₽</span>';
+      legend.appendChild(it2);
+    } else if(net < 0){
+      var it3 = document.createElement("div");
+      it3.className = "wf-item";
+      it3.innerHTML = '<span class="sw" style="background:#FF5D62"></span>Минус <span class="amt" style="color:#FF5D62">'+fmt(net)+'₽</span>';
+      legend.appendChild(it3);
+    }
+
+    // ---- breakeven & target ----
+    var be = priceFor(0, o);
+    var beEl = document.getElementById("breakeven");
+    if(isNaN(be)){ beEl.textContent = "недостижима"; beEl.classList.add("warn"); }
+    else { beEl.textContent = fmt(be)+" ₽"; beEl.classList.remove("warn"); }
+
+    // лайфхак: цена, при которой навар равен навару «как при продаже без доставки»
+    var oCash = {cost:cost, packEff:pack, c:c, minfee:minfee, deliv:deliv, share:0, drr:drr, placementUnit:placementUnit, retCost:0};
+    var noFeeNet = netAt(price, oCash);
+    var pf = (function(target){
+      var lo=1, hi=1000000;
+      if(netAt(hi,o) < target) return NaN;
+      for(var i2=0;i2<60;i2++){ var mid=(lo+hi)/2; if(netAt(mid,o)>=target) hi=mid; else lo=mid; }
+      return hi;
+    })(noFeeNet);
+    var pfEl = document.getElementById("passfee");
+    if(isNaN(pf) || price<=0){ pfEl.textContent = "—"; pfEl.classList.remove("warn"); }
+    else { pfEl.textContent = fmt(pf)+" ₽ (+"+fmt(pf-price)+")"; pfEl.classList.remove("warn"); }
+
+    var m = Math.max(0, Math.min(90, val("targetm")))/100;
+    var tp = priceFor(m, o);
+    var tpEl = document.getElementById("targetprice");
+    if(isNaN(tp)){ tpEl.textContent = "недостижима"; tpEl.classList.add("warn"); }
+    else { tpEl.textContent = fmt(tp)+" ₽"; tpEl.classList.remove("warn"); }
+
+    // ---- monthly ----
+    var mRev = price*volume;
+    var mAvito = (fee + retCost + price*drr)*volume + placement;
+    var mProfit = net*volume;
+    document.getElementById("m-rev").textContent = fmt(mRev)+" ₽";
+    document.getElementById("m-avito").textContent = fmt(mAvito)+" ₽";
+    var mp = document.getElementById("m-profit");
+    mp.textContent = fmt(mProfit)+" ₽";
+    mp.className = "mv num " + (mProfit>=0?"pos":"neg");
+  }
+
+
+  /* ---- состояние в URL: автосохранение и «Ссылка на расчёт» ---- */
+  var HASH_IDS = ["cost","price","pack","cancel","share","commission","minfee","delivery","drr","placement","volume","targetm","retdeliv"];
+<<<INC:hash-persist>>>
+  /* ---------- Мои товары: сохранение, сравнение, экспорт/импорт ---------- */
+  var items = [];
+  var INPUT_IDS = ["cost","price","pack","cancel","share","commission","minfee","delivery","drr","placement","volume","targetm","retdeliv"];
+<<<INC:s17>>>
+      tax: (["none","npd","usn6","usn15"].indexOf(taxMode) >= 0 ? taxMode : "none"),
+      inputs: i
+    };
+    var shipC = 1/(1-Math.max(0,Math.min(90,i.cancel))/100);
+    var shareC = Math.max(0,Math.min(100,i.share))/100;
+    var drrC = Math.max(0,Math.min(90,i.drr))/100;
+    var packEff = i.pack*(shareC*shipC + (1-shareC));
+    var promoUnit = i.price*drrC + i.placement/Math.max(1,i.volume);
+    var fee = shareC * Math.max((i.price+i.delivery)*i.commission/100, i.minfee);
+    var retC = shareC * i.retdeliv*(shipC-1);
+    var pre = i.price - i.cost - packEff - fee - promoUnit - retC;
+    var t = 0;
+    if(s.tax==="npd") t=i.price*0.04;
+    if(s.tax==="usn6") t=i.price*0.06;
+    if(s.tax==="usn15") t=Math.max(pre>0?pre*0.15:0, i.price*0.01);
+    s.net = pre - t;
+    s.margin = i.price>0 ? s.net/i.price*100 : 0;
+    s.avitoShare = i.price>0 ? (fee+promoUnit+retC)/i.price*100 : 0;
+    s.monthly = s.net*Math.max(1,i.volume);
+    return s;
+  }
+
+  function taxLabel(t){
+    return {none:"—", npd:"НПД 4%", usn6:"УСН 6%", usn15:"УСН 15%"}[t] || "—";
+  }
+
+  function snapshot(){
+    var inp = {};
+    INPUT_IDS.forEach(function(id){ inp[id] = val(id); });
+    var nm = document.getElementById("itemname").value.trim() || "Товар " + (items.length + 1);
+    return computeItem(nm, tax, inp);
+  }
+
+  function renderItems(){
+    var tbl = document.getElementById("cmp-table"), body = document.getElementById("cmp-body"), empty = document.getElementById("cmp-empty");
+    body.innerHTML = "";
+    if(items.length === 0){ tbl.style.display="none"; empty.style.display="block"; return; }
+    tbl.style.display="table"; empty.style.display="none";
+    var rows = items.map(function(it,ix){ return {it:it, ix:ix}; });
+    if(sortState.key){
+      rows.sort(function(a,b){
+        var x=a.it[sortState.key], y=b.it[sortState.key];
+        if(sortState.key==="name"||sortState.key==="tax") return String(x).localeCompare(String(y))*sortState.dir;
+        if(sortState.key==="price"||sortState.key==="cost"){ x=a.it.inputs[sortState.key]; y=b.it.inputs[sortState.key]; }
+        return (x-y)*sortState.dir;
+      });
+    }
+    var bestIdx = -1, bestNet = -Infinity;
+    items.forEach(function(it,ix){ if(it.net > bestNet){ bestNet = it.net; bestIdx = ix; } });
+    rows.forEach(function(r){
+      var it = r.it, ix = r.ix;
+      var tr = document.createElement("tr");
+      if(ix === bestIdx && items.length > 1) tr.className = "best";
+      var netCls = it.net>=0?"pos":"neg", mCls = it.monthly>=0?"pos":"neg";
+      tr.innerHTML =
+        "<td>"+escapeHtml(it.name)+(ix===bestIdx&&items.length>1?" ★":"")+"</td>"+
+        "<td>"+fmt(it.inputs.price)+" ₽</td>"+
+        "<td>"+fmt(it.inputs.cost)+" ₽</td>"+
+        '<td class="'+netCls+'">'+fmt(it.net)+" ₽</td>"+
+        "<td>"+pct0(it.margin)+"</td>"+
+        "<td>"+pct0(it.avitoShare)+"</td>"+
+        "<td>"+taxLabel(it.tax)+"</td>"+
+        '<td class="'+mCls+'">'+fmt(it.monthly)+" ₽</td>"+
+        '<td style="white-space:nowrap"><button class="del" data-edit="'+ix+'" title="Загрузить в форму" aria-label="Загрузить строку в форму для правки">✎</button><button class="del" data-ix="'+ix+'" title="Удалить" aria-label="Удалить строку">×</button></td>';
+      body.appendChild(tr);
+    });
+    bindRowActions();
+    scheduleHash();
+  }
+
+
+<<<INC:table-sort>>>
+  document.getElementById("save-item").addEventListener("click", function(){
+    items.push(snapshot());
+    document.getElementById("itemname").value = "";
+    renderItems();
+  });
+
+  document.getElementById("export-items").addEventListener("click", function(){
+    var payload = {app:"navar", version:1, exported:new Date().toISOString(), items:items};
+    var blob = new Blob([JSON.stringify(payload,null,2)], {type:"application/json"});
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "navar-tovary.json";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+<<<INC:s19>>>
+  document.getElementById("export-card").addEventListener("click", function(){ exportCard("Навар с продажи", "Закупка " + fmt(val("cost")) + " ₽ → цена " + fmt(val("price")) + " ₽", [["Маржа","margin"],["Наценка","markup"],["Забирает Авито","avitoshare"],["Безубыточность","breakeven"]]); });
+<<<INC:s20>>>
+        if(data && data.app==="navar" && Array.isArray(data.items)){
+<<<INC:s21>>>
+        } else { alert("Это не файл Навара. Выберите файл, сохранённый через «Экспорт в файл»."); }
+      }catch(e){ alert("Не удалось прочитать файл — он повреждён или имеет другой формат."); }
+    };
+    r.readAsText(f);
+    this.value = "";
+  });
+})();
+</script>
+</body>
+</html>

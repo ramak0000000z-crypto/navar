@@ -1,0 +1,464 @@
+<<<INC:s01>>>
+<title>Навар.Авто — считай сделку до того, как отдал деньги</title>
+<meta name="description" content="Калькулятор сделки для перекупа: навар, навар в день, потолок торга на осмотре и годовой темп. Работает офлайн, данные не покидают браузер.">
+<<<INC:s02>>>
+  body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.45;-webkit-font-smoothing:antialiased}
+<<<INC:s03>>>
+  .logo .dot{color:var(--amber);font-weight:800}
+  .tag{font-size:13.5px;color:var(--muted)}
+
+  .wrap{max-width:1140px;margin:0 auto;padding:14px 24px 24px;display:grid;grid-template-columns:1fr 410px;gap:22px;align-items:start}
+  @media(max-width:920px){.wrap{grid-template-columns:1fr;gap:16px}}
+
+<<<INC:s04>>>
+    padding:11px 46px 11px 13px;transition:border-color .12s,box-shadow .12s;font-variant-numeric:tabular-nums;
+<<<INC:s05>>>
+  /* фирменный блок: максимальный закуп */
+  .maxbuy{
+    margin:0 22px 20px;background:#141A20;color:#fff;border-radius:var(--radius-sm);
+    padding:16px 18px;
+  }
+  .maxbuy .k{font-size:12px;color:#8D99A6;font-weight:700}
+  .maxbuy .v{font-size:30px;font-weight:800;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;color:var(--amber);margin:3px 0 2px}
+  .maxbuy .v.warn{color:var(--red);font-size:18px}
+  .maxbuy .note{font-size:11.5px;color:#8D99A6;line-height:1.5}
+  .maxbuy .goal{display:inline-flex;align-items:center;gap:6px}
+  .maxbuy input{
+    width:96px;background:#1C232B;border:1px solid #28313C;color:#fff;border-radius:8px;
+    padding:5px 9px;font-family:var(--sans);font-size:16px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;
+  }
+  .maxbuy input:focus{outline:none;border-color:var(--green-deep)}
+
+<<<INC:s06>>>
+  .metric .v{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-0.02em}
+<<<INC:s07>>>
+  .year{margin-top:20px;padding:14px 16px;background:var(--panel-2);border:1px solid var(--line);border-radius:var(--radius-sm)}
+  .year-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:10px;flex-wrap:wrap}
+  .year-head .lbl{font-size:12.5px;color:var(--muted);font-weight:700}
+  .year-head .gap{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+  .mini{
+    width:60px;background:var(--panel);border:1px solid var(--line);color:#fff;border-radius:8px;
+    padding:5px 8px;font-family:var(--sans);font-size:16px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;
+  }
+  .mini:focus{outline:none;border-color:var(--green-deep)}
+<<<INC:s08>>>
+  /* сравнение сделок */
+<<<INC:s09>>>
+    padding:9px 12px;font-family:var(--sans);font-size:16px;font-weight:600;width:200px;
+<<<INC:s10>>>
+  table.cmp th{text-align:right;font-size:11px;color:var(--muted);font-weight:700;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+<<<INC:table-css>>>
+<div class="stickybar" style="cursor:pointer" onclick="var v=document.querySelector('.verdict'); if(v&&v.scrollIntoView) v.scrollIntoView({behavior:'smooth'})"><span class="sb-k">Навар со сделки</span><span class="sb-v pos num" id="sb-profit" aria-live="polite">—</span></div>
+
+<header>
+  <span class="logo">Нав<span class="ru">ар</span><span class="dot">.Авто</span></span>
+  <span class="tag">считай сделку до того, как отдал деньги — навар, навар в день и потолок торга</span>
+</header>
+<div style="max-width:1140px;margin:0 auto;padding:0 24px 8px;font-size:13px;color:#8D99A6;line-height:1.5">Начни с двух цифр — <b style="color:#F2F5F7">закуп</b> и <b style="color:#F2F5F7">цена продажи</b>. Остальное можно не трогать: получишь честную первую прикидку, потом уточнишь.</div>
+
+<div class="wrap">
+
+  <!-- ===== INPUTS ===== -->
+  <div class="panel">
+
+    <div class="group">
+      <div class="group-head">
+        <span class="group-title">Машина</span>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="buy">Цена закупа</label>
+          <div class="input-wrap"><input type="text" class="fin" inputmode="decimal" id="buy" data-money value="450000" min="0" step="1000"><span class="unit">₽</span></div>
+        </div>
+        <div class="field">
+          <label for="sale">Планируемая цена продажи</label>
+          <div class="input-wrap"><input type="text" class="fin" inputmode="decimal" id="sale" data-money value="600000" min="0" step="1000"><span class="unit">₽</span></div>
+        </div>
+      </div>
+      <div class="field">
+        <label for="haggle">Торг при продаже (сколько обычно уступаешь)</label>
+        <div class="input-wrap"><input type="text" class="fin" inputmode="decimal" id="haggle" value="3" min="0" max="50"><span class="unit">%</span></div>
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="group-head">
+        <span class="group-title">Вложения в машину</span>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="repair">Ремонт и запчасти</label>
+          <div class="input-wrap"><input type="text" class="fin" inputmode="decimal" id="repair" data-money value="35000" min="0" step="500"><span class="unit">₽</span></div>
+        </div>
+        <div class="field">
+          <label for="detail">Предпродажка (мойка, химчистка, полировка)</label>
+          <div class="input-wrap"><input type="text" class="fin" inputmode="decimal" id="detail" data-money value="8000" min="0" step="500"><span class="unit">₽</span></div>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="docs">Поиск, перегон, оформление (осмотры, бензин, ОСАГО, ДКП)</label>
+          <div class="input-wrap"><input type="text" class="fin" inputmode="decimal" id="docs" data-money value="2000" min="0" step="100"><span class="unit">₽</span></div>
+        </div>
+        <div class="field">
+          <label for="ads">Размещение и продвижение (в «Авто» размещение платное)</label>
+          <div class="input-wrap"><input type="text" class="fin" inputmode="decimal" id="ads" data-money value="3000" min="0" step="100"><span class="unit">₽</span></div>
+        </div>
+      </div>
+    </div>
+
+    <button class="adv-toggle" id="adv-toggle">Точная настройка: комиссия, продвижение, налоги ▾</button>
+    <div class="group advanced">
+      <div class="group-head">
+        <span class="group-title">Время и площадка</span>
+        <span class="group-note">время — тоже деньги перекупа</span>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="days">Дней от закупа до продажи</label>
+          <div class="input-wrap"><input type="text" class="fin" inputmode="decimal" id="days" value="21" min="1"><span class="unit">дн</span></div>
+        </div>
+        <div class="field">
+          <label for="parking">Стоянка / хранение в день</label>
+          <div class="input-wrap"><input type="text" class="fin" inputmode="decimal" id="parking" data-money value="0" min="0" step="10"><span class="unit">₽</span></div>
+        </div>
+      </div>
+      <div class="field">
+        <label for="rate">Деньги под процент — ставка по кредиту/займу (0 — если свои)</label>
+        <div class="input-wrap"><input type="text" inputmode="decimal" class="fin" id="rate" value="0"><span class="unit">%/год</span></div>
+      </div>
+      <div class="field">
+        <label for="fee">Комиссия площадки или салона с продажи (если продаёшь не сам)</label>
+        <div class="input-wrap"><input type="text" class="fin" inputmode="decimal" id="fee" value="0" min="0" max="50"><span class="unit">%</span></div>
+      </div>
+    </div>
+
+    <div class="group advanced">
+      <div class="group-head">
+        <span class="group-title">Налог</span>
+      </div>
+      <div class="seg" id="tax-seg">
+        <button data-tax="none" class="on">Не считаю<small>на свой риск</small></button>
+        <button data-tax="ndfl">НДФЛ 13%<small>по документам закупа</small></button>
+      </div>
+    </div>
+
+    <!-- ФИРМЕННАЯ ФИШКА -->
+    <div class="maxbuy">
+      <div class="k">ПОТОЛОК ТОРГА — максимум, который можно отдать за машину,
+        чтобы заработать <span class="goal"><input type="text" class="fin" inputmode="decimal" id="goal" data-money value="80000" min="0" step="5000"> ₽</span>
+      </div>
+      <div class="v num" id="maxbuy">—</div>
+      <div class="note">Считается от твоей цены продажи и всех расходов выше. Назвал продавец больше — разворачивайся или дожимай торг.</div>
+      <div class="note" style="margin-top:8px">Выезжать на осмотр можно на объявления до <b style="color:#fff" id="adprice">—</b> (продавцы уступают ~<span class="goal"><input type="number" id="buy-haggle" class="mini num fin" value="5" style="width:52px"></span>%)</div>
+    </div>
+
+  </div>
+
+  <!-- ===== VERDICT ===== -->
+  <div class="verdict">
+    <div class="v-label">Навар со сделки</div>
+    <div class="v-hero">
+      <span class="v-profit pos num" id="profit" aria-live="polite">—</span>
+      <span class="v-per">₽</span>
+    </div>
+    <span class="v-status pos" id="status"><span class="dot"></span><span id="status-txt">—</span></span>
+
+    <div class="metrics">
+      <div class="metric"><div class="k">Навар в день</div><div class="v num" id="perday">—</div></div>
+      <div class="metric" title="Навар / (закуп + ремонт + предпродажка)"><div class="k">На вложенный ₽</div><div class="v num" id="roi">—</div></div>
+      <div class="metric"><div class="k">Маржа</div><div class="v num" id="margin">—</div></div>
+    </div>
+
+    <div class="waterfall">
+      <div class="wf-title">Куда уходит цена продажи</div>
+      <div class="wf-bar" id="wf-bar"></div>
+      <div class="wf-legend" id="wf-legend"></div>
+    </div>
+
+    <div class="year">
+      <div class="year-head">
+        <span class="lbl">Годовой темп</span>
+        <span class="gap">поиск следующей: <input type="text" inputmode="decimal" class="mini num fin" id="gapdays" value="7" min="0"> дн</span>
+      </div>
+      <div class="m-row"><span class="mk">Сделок в год при таком цикле</span><span class="mv num" id="y-deals">—</span></div>
+      <div class="m-row"><span class="mk">Навар за год</span><span class="mv num pos" id="y-profit">—</span></div>
+      <div class="m-row"><span class="mk">Годовая доходность капитала</span><span class="mv num" id="y-roi">—</span></div>
+      <div class="m-row"><span class="mk">НДФЛ за год при этом темпе</span><span class="mv num" id="y-tax">—</span></div>
+      <div style="font-size:11px;color:#5D6873;margin-top:8px;line-height:1.5">Линейная оценка при ровном темпе. Сезон, простои и зависшие машины её режут — смотри стресс-тест.</div>
+    </div>
+
+    <div class="year" style="margin-top:12px">
+      <div class="year-head">
+        <span class="lbl">А если зависнет?</span>
+        <span class="gap">+<input type="text" inputmode="decimal" class="mini num fin" id="st-days" value="30"> дн, −<input type="text" inputmode="decimal" class="mini num fin" id="st-disc" value="5">% цены, ремонт +<input type="text" inputmode="decimal" class="mini num fin" id="st-reppct" value="5" style="width:52px">% закупа</span>
+      </div>
+      <div class="m-row"><span class="mk">Навар при зависании</span><span class="mv num" id="st-net">—</span></div>
+      <div class="m-row"><span class="mk">Навар в день станет</span><span class="mv num" id="st-perday">—</span></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== СРАВНЕНИЕ СДЕЛОК ===== -->
+<div class="compare">
+  <div class="compare-panel">
+    <div class="compare-head">
+      <div>
+        <div class="compare-title">Мои сделки</div>
+        <div class="compare-sub">Сохраняй варианты и сравнивай, какая машина кормит лучше. Данные живут, пока открыта вкладка: закроешь — сотрутся. Жми «Экспорт в файл».</div>
+      </div>
+      <div class="compare-actions">
+        <input type="text" class="name-inline" id="itemname" placeholder="Например: Королла 2012" maxlength="40">
+        <button class="btn primary" id="save-item">Сохранить сделку</button>
+<<<INC:s12>>>
+    <div class="compare-empty" id="cmp-empty">Пока пусто. Заполни расчёт выше, впиши название машины и нажми «Сохранить сделку».</div>
+    <div class="cmp-scroll">
+      <table class="cmp" id="cmp-table" style="display:none">
+        <thead><tr>
+          <th data-key="name">Машина ⇅</th><th data-key="buy">Закуп ⇅</th><th data-key="sale">Продажа ⇅</th><th data-key="net">Навар ⇅</th><th data-key="perday">₽/день ⇅</th><th data-key="roi">ROI ⇅</th><th data-key="tax">Налог ⇅</th><th></th>
+        </tr></thead>
+        <tbody id="cmp-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <b>Навар.Авто</b> v4.1 · формулы сверены: июль 2026 · © 2026 Навар, все права защищены. Считает всё в браузере, ничего никуда не отправляет и работает без интернета. Налоговый блок упрощён: НДФЛ 13% считается с разницы «продажа − закуп» при владении менее 3 лет и использовании вычета по документам о покупке; прогрессивная шкала не учтена — при налоговой базе свыше 2,4 млн ₽ в год ставка выше (15–22%); систематическая перепродажа автомобилей может быть признана предпринимательской деятельностью с иными налоговыми последствиями. Это справочный расчёт, а не налоговая или юридическая консультация.
+<<<INC:lzstring>>>
+<<<INC:fmt-utils>>>
+  function calc(buy, o){
+    var saleReal = o.sale * (1 - o.haggle);
+    var feeAmt = saleReal * o.fee;
+    var hold = o.parking * o.days;
+    var capCost = (buy + o.repair + o.detail) * o.rate / 365 * o.days;
+    var costs = o.repair + o.detail + o.docs + o.ads + hold + capCost;
+    var pre = saleReal - buy - costs - feeAmt;
+    var taxAmt = 0;
+    if(tax === "ndfl"){
+      var base = saleReal - buy;
+      taxAmt = base > 0 ? base * 0.13 : 0;
+    }
+    return {saleReal:saleReal, feeAmt:feeAmt, hold:hold, capCost:capCost, costs:costs, taxAmt:taxAmt, net:pre - taxAmt};
+  }
+
+  // максимальный закуп для целевого навара — бинарным поиском (устойчиво к кускам налога)
+  function maxBuyFor(goal, o){
+    var lo = 0, hi = o.sale * 2 + 1000000;
+    if(calc(0,o).net < goal) return NaN; // даже даром машина не даёт цель
+    for(var i=0;i<60;i++){
+      var mid = (lo+hi)/2;
+      if(calc(mid,o).net >= goal) lo = mid; else hi = mid;
+    }
+    return lo;
+  }
+
+  function recompute(){
+    var o = {
+      sale:val("sale"), haggle:Math.max(0,Math.min(50,val("haggle")))/100,
+      repair:val("repair"), detail:val("detail"), docs:val("docs"), ads:val("ads"),
+      days:Math.max(1,val("days")), parking:val("parking"),
+      fee:Math.max(0,Math.min(50,val("fee")))/100,
+      rate:Math.max(0,val("rate"))/100
+    };
+    var buy = val("buy");
+    var r = calc(buy, o);
+
+    // hero
+    var pEl = document.getElementById("profit");
+    pEl.textContent = fmt(r.net);
+    pEl.className = "v-profit num " + (r.net >= 0 ? "pos" : "neg");
+    var sb = document.getElementById("sb-profit");
+    sb.textContent = fmt(r.net) + " ₽";
+    sb.className = "sb-v num " + (r.net >= 0 ? "pos" : "neg");
+    scheduleHash();
+    var stEl = document.getElementById("status"), stTxt = document.getElementById("status-txt");
+    if(r.net >= 0){ stEl.className = "v-status pos"; stTxt.textContent = "Сделка кормит"; }
+    else { stEl.className = "v-status neg"; stTxt.textContent = "Сделка в минус — не бери"; }
+
+    // metrics
+    var perday = r.net / o.days;
+    var invested = buy + o.repair + o.detail;
+    var roi = invested > 0 ? r.net / invested * 100 : 0;
+    var margin = r.saleReal > 0 ? r.net / r.saleReal * 100 : 0;
+    document.getElementById("perday").textContent = fmt(perday) + " ₽";
+    document.getElementById("roi").textContent = pct0(roi);
+    document.getElementById("margin").textContent = pct0(margin);
+
+    // maxbuy
+    var goal = Math.max(0, val("goal"));
+    var mb = maxBuyFor(goal, o);
+    var mbEl = document.getElementById("maxbuy");
+    var sellerHaggle = Math.max(0, Math.min(30, val("buy-haggle")))/100;
+    var adEl = document.getElementById("adprice");
+    if(isNaN(mb)){ mbEl.textContent = "цель недостижима при этой цене продажи"; mbEl.className = "v num warn"; adEl.textContent = "—"; }
+    else { mbEl.textContent = fmt(mb) + " ₽"; mbEl.className = "v num"; adEl.textContent = fmt(mb/(1-sellerHaggle)) + " ₽"; }
+
+    // waterfall (от реальной цены продажи)
+    var parts = [
+      {k:"Закуп",            v:buy,       c:"#7A828C"},
+      {k:"Ремонт и запчасти",v:o.repair,  c:"#4AA3FF"},
+      {k:"Предпродажка",     v:o.detail,  c:"#B48CFF"},
+      {k:"Оформление и реклама", v:o.docs+o.ads, c:"#5FB6C9"},
+      {k:"Стоянка",          v:r.hold,    c:"#8A93D6"},
+      {k:"Проценты по деньгам",v:r.capCost, c:"#D67BA8"},
+      {k:"Комиссия площадки",v:r.feeAmt,  c:"#1FA85A"},
+      {k:"Налог",            v:r.taxAmt,  c:"#F5B84D"}
+    ];
+    var costsSum = parts.reduce(function(s,p){return s+p.v},0);
+    var denom = Math.max(r.saleReal, costsSum);
+<<<INC:s15>>>
+      seg.style.background = p.c;
+      bar.appendChild(seg);
+      var it = document.createElement("div");
+      it.className = "wf-item";
+      it.innerHTML = '<span class="sw" style="background:'+p.c+'"></span>'+p.k+' <span class="amt">'+fmt(p.v)+'₽</span>';
+      legend.appendChild(it);
+    });
+    if(r.net > 0){
+      var seg2 = document.createElement("div");
+      seg2.className = "wf-seg";
+      seg2.style.width = (r.net/denom*100)+"%";
+      seg2.style.background = "#EAF2F7";
+      bar.appendChild(seg2);
+      var it2 = document.createElement("div");
+      it2.className = "wf-item";
+      it2.innerHTML = '<span class="sw" style="background:#EAF2F7"></span>Твой навар <span class="amt">'+fmt(r.net)+'₽</span>';
+      legend.appendChild(it2);
+    } else if(r.net < 0){
+      var it3 = document.createElement("div");
+      it3.className = "wf-item";
+      it3.innerHTML = '<span class="sw" style="background:#FF5D62"></span>Минус <span class="amt" style="color:#FF5D62">'+fmt(r.net)+'₽</span>';
+      legend.appendChild(it3);
+    }
+
+    // стресс-тест «зависла»: дольше стоит + скидка при продаже
+    var stDays = Math.max(0, val("st-days")), stDisc = Math.max(0, Math.min(50, val("st-disc")))/100;
+    var stRep = buy * Math.max(0, val("st-reppct"))/100;
+    var oS = {sale:o.sale, haggle:Math.min(0.95, o.haggle + stDisc), repair:o.repair + stRep, detail:o.detail,
+              docs:o.docs, ads:o.ads, days:o.days + stDays, parking:o.parking, fee:o.fee, rate:o.rate};
+    var rS = calc(buy, oS);
+    var stNet = document.getElementById("st-net"), stPd = document.getElementById("st-perday");
+    stNet.textContent = fmt(rS.net)+" ₽";
+    stNet.className = "mv num " + (rS.net>=0?"pos":"neg");
+    stPd.textContent = fmt(rS.net/oS.days)+" ₽";
+    stPd.className = "mv num " + (rS.net>=0?"pos":"neg");
+
+    // год
+    var gap = Math.max(0, val("gapdays"));
+    var cycle = o.days + gap;
+    var deals = cycle > 0 ? 365/cycle : 0;
+    var yProfit = r.net * deals;
+    var yRoi = invested > 0 ? yProfit/invested*100 : 0;
+    document.getElementById("y-deals").textContent = deals.toFixed(1).replace(".",",");
+    var yp = document.getElementById("y-profit");
+    yp.textContent = fmt(yProfit)+" ₽";
+    yp.className = "mv num " + (yProfit>=0?"pos":"neg");
+    document.getElementById("y-roi").textContent = pct0(yRoi);
+    document.getElementById("y-tax").textContent = (tax==="none") ? "— (не считаешь)" : fmt(r.taxAmt*deals)+" ₽";
+  }
+
+
+  /* ---- состояние в URL: автосохранение и «Ссылка на расчёт» ---- */
+  var HASH_IDS = ["buy","sale","haggle","repair","detail","docs","ads","days","parking","fee","goal","gapdays","rate"];
+<<<INC:hash-persist>>>
+  /* ---------- Мои сделки ---------- */
+  var items = [];
+  var INPUT_IDS = ["buy","sale","haggle","repair","detail","docs","ads","days","parking","fee","goal","gapdays","rate"];
+<<<INC:s17>>>
+      tax: (["none","ndfl"].indexOf(taxMode) >= 0 ? taxMode : "none"),
+      inputs: i
+    };
+    var o = {sale:i.sale, haggle:Math.max(0,Math.min(50,i.haggle))/100, repair:i.repair, detail:i.detail,
+             docs:i.docs, ads:i.ads, days:Math.max(1,i.days), parking:i.parking, fee:Math.max(0,Math.min(50,i.fee))/100,
+             rate:Math.max(0,i.rate)/100};
+    var saleReal = o.sale * (1 - o.haggle);
+    var feeAmt = saleReal * o.fee;
+    var hold = o.parking * o.days;
+    var capCost = (i.buy + o.repair + o.detail) * o.rate / 365 * o.days;
+    var pre = saleReal - i.buy - (o.repair + o.detail + o.docs + o.ads + hold + capCost) - feeAmt;
+    var t = 0;
+    if(s.tax === "ndfl"){ var base = saleReal - i.buy; t = base > 0 ? base * 0.13 : 0; }
+    s.net = pre - t;
+    s.perday = s.net/o.days;
+    var invested = i.buy + i.repair + i.detail;
+    s.roi = invested>0 ? s.net/invested*100 : 0;
+    return s;
+  }
+
+  function taxLabel(t){ return {none:"—", ndfl:"НДФЛ 13%"}[t] || "—"; }
+
+  function snapshot(){
+    var inp = {};
+    INPUT_IDS.forEach(function(id){ inp[id] = val(id); });
+    var nm = document.getElementById("itemname").value.trim() || "Сделка " + (items.length + 1);
+    return computeItem(nm, tax, inp);
+  }
+
+
+<<<INC:table-sort>>>
+  function renderItems(){
+    var tbl = document.getElementById("cmp-table"), body = document.getElementById("cmp-body"), empty = document.getElementById("cmp-empty");
+    body.innerHTML = "";
+    if(items.length === 0){ tbl.style.display="none"; empty.style.display="block"; return; }
+    tbl.style.display="table"; empty.style.display="none";
+    var rows = items.map(function(it,ix){ return {it:it, ix:ix}; });
+    if(sortState.key){
+      rows.sort(function(a,b){
+        var x=a.it[sortState.key], y=b.it[sortState.key];
+        if(sortState.key==="name"||sortState.key==="tax") return String(x).localeCompare(String(y))*sortState.dir;
+        if(sortState.key==="buy"||sortState.key==="sale"){ x=a.it.inputs[sortState.key]; y=b.it.inputs[sortState.key]; }
+        return (x-y)*sortState.dir;
+      });
+    }
+    var bestIdx = -1, best = -Infinity;
+    items.forEach(function(it,ix){ if(it.perday > best){ best = it.perday; bestIdx = ix; } });
+    rows.forEach(function(r){
+      var it = r.it, ix = r.ix;
+      var tr = document.createElement("tr");
+      if(ix === bestIdx && items.length > 1) tr.className = "best";
+      tr.innerHTML =
+        "<td>"+escapeHtml(it.name)+(ix===bestIdx&&items.length>1?" ★":"")+"</td>"+
+        "<td>"+fmt(it.inputs.buy)+" ₽</td>"+
+        "<td>"+fmt(it.inputs.sale)+" ₽</td>"+
+        '<td class="'+(it.net>=0?"pos":"neg")+'">'+fmt(it.net)+" ₽</td>"+
+        '<td class="'+(it.perday>=0?"pos":"neg")+'">'+fmt(it.perday)+" ₽</td>"+
+        "<td>"+pct0(it.roi)+"</td>"+
+        "<td>"+taxLabel(it.tax)+"</td>"+
+        '<td style="white-space:nowrap"><button class="del" data-edit="'+ix+'" title="Загрузить в форму" aria-label="Загрузить строку в форму для правки">✎</button><button class="del" data-ix="'+ix+'" title="Удалить" aria-label="Удалить строку">×</button></td>';
+      body.appendChild(tr);
+    });
+    bindRowActions();
+    scheduleHash();
+  }
+
+  document.getElementById("save-item").addEventListener("click", function(){
+    items.push(snapshot());
+    document.getElementById("itemname").value = "";
+    renderItems();
+  });
+  document.getElementById("export-items").addEventListener("click", function(){
+    var payload = {app:"navar-auto", version:1, exported:new Date().toISOString(), items:items};
+    var blob = new Blob([JSON.stringify(payload,null,2)], {type:"application/json"});
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "navar-auto-sdelki.json";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+<<<INC:s19>>>
+  document.getElementById("export-card").addEventListener("click", function(){ exportCard("Навар со сделки", "Закуп " + fmt(val("buy")) + " ₽ → продажа " + fmt(val("sale")) + " ₽", [["Навар в день","perday"],["На вложенный ₽","roi"],["Потолок торга","maxbuy"],["Если зависнет","st-net"]]); });
+<<<INC:s20>>>
+        if(data && data.app==="navar-auto" && Array.isArray(data.items)){
+<<<INC:s21>>>
+        } else { alert("Это не файл Навар.Авто. Выберите файл, сохранённый через «Экспорт в файл»."); }
+      }catch(e){ alert("Не удалось прочитать файл — он повреждён или имеет другой формат."); }
+    };
+    r.readAsText(f);
+    this.value = "";
+  });
+})();
+</script>
+</body>
+</html>

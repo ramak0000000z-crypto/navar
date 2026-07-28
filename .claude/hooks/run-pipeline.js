@@ -12,8 +12,11 @@ process.stdin.on("end", () => {
     const j = JSON.parse(raw);
     file = (j.tool_input && j.tool_input.file_path) || (j.tool_response && j.tool_response.filePath) || "";
   } catch (_) {}
-  if (!/\.html?$/i.test(file)) process.exit(0);
+  const isTemplate = /[\\/]template[\\/].*\.(html|inc)$/i.test(file);
+  if (!/\.(html|inc)$/i.test(file)) process.exit(0);
   try {
+    // правка шаблона -> сначала пересобрать продукты, потом тестировать
+    if (isTemplate) execSync("node build.js", { cwd: ROOT, stdio: "pipe", timeout: 30000 });
     execSync("node runner.js", { cwd: ROOT, stdio: "pipe", timeout: 110000 });
     process.exit(0);
   } catch (e) {
