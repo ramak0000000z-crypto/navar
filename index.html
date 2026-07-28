@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Навар — честные калькуляторы для тех, кто продаёт</title>
+<meta name="description" content="Линейка бесплатных калькуляторов юнит-экономики: Навар для продавцов на Авито и Навар.Авто для авто-перекупов. Считают в браузере, ничего никуда не отправляют.">
+<style>
+  :root{
+    --bg:#12161C; --panel:#1B212B; --line:#2A323E;
+    --text:#EDF1F5; --muted:#8A94A3;
+    --green:#22C55E; --amber:#F59E0B;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;min-height:100vh;display:flex;flex-direction:column}
+  main{max-width:760px;margin:0 auto;padding:48px 24px 24px;flex:1;width:100%}
+  h1{font-size:40px;letter-spacing:-.5px}
+  h1 .ru{color:var(--green)}
+  .tag{color:var(--muted);margin:10px 0 34px;font-size:17px}
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:640px){ .cards{grid-template-columns:1fr} h1{font-size:32px} }
+  a.card{display:block;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;text-decoration:none;color:var(--text);transition:border-color .15s}
+  a.card:hover{border-color:var(--green)}
+  a.card.avto:hover{border-color:var(--amber)}
+  .card h2{font-size:22px;margin-bottom:8px}
+  .card h2 .accent{color:var(--green)}
+  .card.avto h2 .accent{color:var(--amber)}
+  .card p{color:var(--muted);font-size:14px;margin-bottom:12px}
+  .card .go{font-size:14px;color:var(--green)}
+  .card.avto .go{color:var(--amber)}
+  footer{max-width:760px;margin:0 auto;padding:24px;color:var(--muted);font-size:12.5px;width:100%}
+</style>
+</head>
+<body>
+<main>
+  <h1>Нав<span class="ru">ар</span></h1>
+  <p class="tag">честные калькуляторы юнит-экономики — считают всё в браузере, работают офлайн, ничего никуда не отправляют</p>
+  <div class="cards">
+    <a class="card" href="navar/">
+      <h2>Нав<span class="accent">ар</span> · Авито</h2>
+      <p>Сколько ты реально зарабатываешь на Авито: комиссия с минимальным удержанием, доставка, продвижение, невыкупы и налог.</p>
+      <span class="go">Открыть →</span>
+    </a>
+    <a class="card avto" href="avto/">
+      <h2>Навар.<span class="accent">Авто</span></h2>
+      <p>Считай сделку до того, как отдал деньги: навар, навар в день, потолок торга на осмотре и стресс-тест «зависла».</p>
+      <span class="go">Открыть →</span>
+    </a>
+  </div>
+</main>
+<footer>
+  © 2026 Навар. Оба инструмента — один HTML-файл без сервера: можно сохранить себе и пользоваться офлайн. Расчёты справочные, не налоговая консультация.
+</footer>
+</body>
+</html>

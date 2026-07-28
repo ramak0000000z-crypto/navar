@@ -25,3 +25,10 @@ function build(tplName, outName) {
 
 build("navar.tpl.html", "navar.html");
 build("navar-auto.tpl.html", "navar-auto.html");
+
+// копии для GitHub Pages: /navar и /avto
+for (const [src, dir] of [["navar.html", "navar"], ["navar-auto.html", "avto"]]) {
+  fs.mkdirSync(path.join(ROOT, dir), { recursive: true });
+  fs.copyFileSync(path.join(ROOT, src), path.join(ROOT, dir, "index.html"));
+  console.log("copied " + src + " -> " + dir + "/index.html");
+}
