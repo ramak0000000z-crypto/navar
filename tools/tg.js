@@ -138,6 +138,48 @@ async function main() {
     return;
   }
 
+  if (cmd === "setup") {
+    // Текст, который человек видит в пустом чате с ботом — ДО того, как нажмёт «Старт».
+    await api("setMyShortDescription", {
+      short_description: "Честные калькуляторы навара: Авито и авто-перекуп. Бесплатно, считают прямо в браузере.",
+    });
+    await api("setMyDescription", {
+      description:
+        "Бот проекта «Навар» — честные калькуляторы для тех, кто продаёт.\n\n" +
+        "Нажми «Старт», если тебе нужен PRO: сохранение расчётов между сессиями, сравнение периодов, " +
+        "выгрузка в таблицу, уведомления об изменении тарифов Авито.\n\n" +
+        "Мы пока ничего не продаём — считаем, скольким это нужно, и сделаем в первую очередь то, что просят.\n\n" +
+        "Сами калькуляторы бесплатны и работают без интернета: ramak0000000z-crypto.github.io/navar/",
+    });
+    console.log("Описание бота обновлено — видно в пустом чате до нажатия «Старт».");
+    return;
+  }
+
+  if (cmd === "reply") {
+    // Отвечаем тем, кто написал боту и ещё не получил ответа (сервера нет, отвечаем пачкой).
+    const s = state();
+    s.answered = s.answered || [];
+    const ups = await api("getUpdates", { limit: 100, allowed_updates: ["message"] });
+    const starts = ups.filter((u) => u.message && /^\/start/.test(u.message.text || ""));
+    const fresh = starts.filter((u) => !s.answered.includes(u.message.from.id));
+    if (!fresh.length) { console.log("Новых обращений нет — отвечать некому."); return; }
+    for (const u of fresh) {
+      const name = u.message.from.first_name || "";
+      const text =
+        (name ? name + ", с" : "С") + "пасибо — записал.\n\n" +
+        "PRO пока в разработке, денег не берём. Как будет готов — напишу тебе первым, " +
+        "и список возможностей соберём по таким заявкам.\n\n" +
+        "Если хочешь повлиять на то, что войдёт в PRO — просто ответь сюда, чего не хватает.\n\n" +
+        "Пока пользуйся бесплатными: https://ramak0000000z-crypto.github.io/navar/";
+      if (dry) { console.log("--- ЧЕРНОВИК для " + (u.message.from.username || u.message.from.id) + " ---\n" + text); continue; }
+      await api("sendMessage", { chat_id: u.message.chat.id, text });
+      s.answered.push(u.message.from.id);
+      console.log("Ответил: " + (u.message.from.username ? "@" + u.message.from.username : name || u.message.from.id));
+    }
+    if (!dry) saveState(s);
+    return;
+  }
+
   if (cmd === "signals") {
     // Нажатия «Хочу PRO» приходят боту как /start pro. getUpdates отдаёт последние сутки-двое.
     const ups = await api("getUpdates", { limit: 100, allowed_updates: ["message"] });
@@ -153,7 +195,7 @@ async function main() {
     return;
   }
 
-  die("Неизвестная команда. Доступно: check, list, next, post <номер>, signals. Флаг --dry — показать без отправки.");
+  die("Неизвестная команда. Доступно: check, list, next, post <номер>, setup, reply, signals. Флаг --dry — показать без отправки.");
 }
 
 main().catch((e) => die(e.message));
