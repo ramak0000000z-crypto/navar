@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Своди — таблица в отчёт за минуту</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --canvas:#F2F4F7;
+    --paper:#FFFFFF;
+    --ink:#131C2B;
+    --ink-soft:#3B4657;
+    --muted:#6B7686;
+    --line:#E4E8EE;
+    --line-strong:#CFD6E0;
+    --brand:#0E7C63;      /* deep emerald */
+    --brand-ink:#0A5C49;
+    --brand-wash:#E7F4F0;
+    --accent:#E0912B;     /* warm amber */
+    --accent-wash:#FBF0DC;
+    --danger:#C0492F;
+    --radius:14px;
+    --shadow:0 1px 2px rgba(19,28,43,.04), 0 8px 24px rgba(19,28,43,.06);
+    --display:"Space Grotesk", "Segoe UI", system-ui, sans-serif;
+    --body:"Inter", system-ui, -apple-system, sans-serif;
+    --mono:"Space Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:var(--body);
+    background:var(--canvas);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    line-height:1.5;
+  }
+  .wrap{max-width:1120px;margin:0 auto;padding:0 24px}
+
+  /* ---------- top bar ---------- */
+  .topbar{position:sticky;top:0;z-index:40;background:rgba(242,244,247,.86);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  .topbar-inner{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .brand{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:700;font-size:20px;letter-spacing:-.01em;color:var(--ink)}
+  .brand .mark{width:30px;height:30px;border-radius:8px;background:var(--brand);position:relative;flex:0 0 auto;overflow:hidden}
+  .brand .mark::before,.brand .mark::after{content:"";position:absolute;background:#fff;border-radius:2px}
+  .brand .mark::before{left:6px;bottom:6px;width:4px;height:9px;box-shadow:6px 0 0 var(--accent),12px 0 0 #fff}
+  .brand .mark::after{left:6px;bottom:6px;width:18px;height:2px;opacity:.5}
+  .topbar .tag{font-family:var(--mono);font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+  .btn{font-family:var(--body);font-weight:600;font-size:14px;border:none;border-radius:10px;padding:10px 16px;cursor:pointer;transition:transform .06s ease, background .15s ease, box-shadow .15s;display:inline-flex;align-items:center;gap:8px}
+  .btn:active{transform:translateY(1px)}
+  .btn-primary{background:var(--brand);color:#fff}
+  .btn-primary:hover{background:var(--brand-ink)}
+  .btn-ghost{background:transparent;color:var(--ink-soft);border:1px solid var(--line-strong)}
+  .btn-ghost:hover{background:#fff}
+  .btn[disabled]{opacity:.45;cursor:not-allowed}
+
+  /* ---------- hero / upload ---------- */
+  .hero{padding:64px 0 40px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brand);margin-bottom:18px}
+  h1{font-family:var(--display);font-weight:700;font-size:clamp(34px,5vw,52px);line-height:1.04;letter-spacing:-.02em;margin:0 0 18px;max-width:16ch}
+  h1 em{font-style:normal;color:var(--brand);position:relative;white-space:nowrap}
+  h1 em::after{content:"";position:absolute;left:0;right:0;bottom:.06em;height:.28em;background:var(--accent-wash);z-index:-1;border-radius:3px}
+  .lede{font-size:18px;color:var(--ink-soft);max-width:52ch;margin:0 0 32px}
+
+  .drop{
+    background:var(--paper);border:1.5px dashed var(--line-strong);border-radius:var(--radius);
+    padding:40px;text-align:center;transition:border-color .15s, background .15s;cursor:pointer;position:relative
+  }
+  .drop.drag{border-color:var(--brand);background:var(--brand-wash)}
+  .drop .ico{width:52px;height:52px;margin:0 auto 14px;border-radius:12px;background:var(--brand-wash);display:grid;place-items:center;color:var(--brand)}
+  .drop h3{font-family:var(--display);font-weight:600;font-size:19px;margin:0 0 6px}
+  .drop p{color:var(--muted);margin:0;font-size:14px}
+  .drop .formats{margin-top:14px;font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.05em}
+  .under{display:flex;gap:20px;align-items:center;margin-top:18px;flex-wrap:wrap}
+  .under a{color:var(--brand-ink);font-weight:600;font-size:14px;cursor:pointer;text-decoration:none;border-bottom:1.5px solid var(--brand-wash);padding-bottom:1px}
+  .under a:hover{border-color:var(--brand)}
+  .under .dot{width:3px;height:3px;border-radius:50%;background:var(--line-strong)}
+  .privacy{font-size:13px;color:var(--muted)}
+
+  .feat{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:44px}
+  .feat .cell{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:20px}
+  .feat .cell .n{font-family:var(--mono);font-size:12px;color:var(--accent);font-weight:700;margin-bottom:8px}
+  .feat .cell h4{font-family:var(--display);font-size:15px;margin:0 0 4px;font-weight:600}
+  .feat .cell p{font-size:13px;color:var(--muted);margin:0}
+
+  /* ---------- report ---------- */
+  #report{display:none;padding:28px 0 80px}
+  #report.on{display:block}
+  .report-toolbar{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap}
+  .report-toolbar .left{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .filepill{font-family:var(--mono);font-size:12px;color:var(--ink-soft);background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:7px 11px;display:inline-flex;gap:8px;align-items:center}
+  .filepill .x{color:var(--muted);cursor:pointer;font-weight:700}
+  .filepill .x:hover{color:var(--danger)}
+
+  .sheet{background:var(--paper);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);overflow:hidden}
+  .sheet-head{padding:28px 32px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#fff, #fbfcfd)}
+  .sheet-head .row{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+  .rep-title{font-family:var(--display);font-weight:700;font-size:26px;letter-spacing:-.01em;color:var(--ink);border:none;background:transparent;width:100%;padding:2px 0;margin:0}
+  .rep-title:focus{outline:none;box-shadow:0 2px 0 var(--accent)}
+  .rep-meta{font-size:13px;color:var(--muted);margin-top:6px}
+  .rep-brand{text-align:right;min-width:160px}
+  .rep-brand input{font-family:var(--display);font-weight:600;font-size:15px;text-align:right;border:none;background:transparent;color:var(--brand-ink);width:100%}
+  .rep-brand input:focus{outline:none;box-shadow:0 2px 0 var(--brand)}
+  .rep-brand .lbl{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+
+  .section{padding:26px 32px;border-bottom:1px solid var(--line)}
+  .section:last-child{border-bottom:none}
+  .section-h{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin:0 0 18px;display:flex;align-items:center;gap:10px}
+  .section-h::after{content:"";flex:1;height:1px;background:var(--line)}
+
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+  .kpi{border:1px solid var(--line);border-radius:12px;padding:16px 18px;background:#fff;position:relative;overflow:hidden}
+  .kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--brand)}
+  .kpi.amber::before{background:var(--accent)}
+  .kpi .k-label{font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .kpi .k-val{font-family:var(--mono);font-weight:700;font-size:23px;color:var(--ink);letter-spacing:-.02em;line-height:1.1}
+  .kpi .k-sub{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:6px}
+
+  .chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  @media(max-width:820px){.chart-grid{grid-template-columns:1fr}.feat{grid-template-columns:1fr}}
+  .chart-card{border:1px solid var(--line);border-radius:12px;padding:18px 18px 10px;background:#fff}
+  .chart-card .c-title{font-family:var(--display);font-weight:600;font-size:14px;margin:0 0 2px}
+  .chart-card .c-sub{font-size:12px;color:var(--muted);margin:0 0 14px}
+  .chart-card svg{width:100%;display:block;overflow:visible}
+  .bar-row{display:flex;align-items:center;gap:10px;margin-bottom:9px;font-size:13px}
+  .bar-row .b-name{width:34%;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right}
+  .bar-row .b-track{flex:1;height:20px;background:var(--brand-wash);border-radius:5px;overflow:hidden;position:relative}
+  .bar-row .b-fill{height:100%;background:var(--brand);border-radius:5px 0 0 5px}
+  .bar-row .b-val{width:18%;font-family:var(--mono);font-size:12px;color:var(--ink);text-align:left}
+
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  thead th{text-align:left;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:700;padding:9px 12px;border-bottom:1.5px solid var(--line-strong);white-space:nowrap;position:sticky;top:0;background:#fff}
+  thead th.num{text-align:right}
+  tbody td{padding:9px 12px;border-bottom:1px solid var(--line);color:var(--ink-soft);white-space:nowrap;max-width:240px;overflow:hidden;text-overflow:ellipsis}
+  tbody td.num{text-align:right;font-family:var(--mono);color:var(--ink)}
+  tbody tr:hover{background:#fafbfc}
+  .table-scroll{overflow:auto;max-height:380px;border:1px solid var(--line);border-radius:10px}
+  .tbl-note{font-size:12px;color:var(--muted);margin-top:10px}
+
+  .empty-note{color:var(--muted);font-size:14px;font-style:italic}
+  .footer-note{text-align:center;color:var(--muted);font-size:12px;padding:22px 0 0;font-family:var(--mono);letter-spacing:.03em}
+
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 18px;border-radius:10px;font-size:14px;opacity:0;transition:.25s;z-index:80;pointer-events:none}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* ---------- print ---------- */
+  @media print{
+    body{background:#fff}
+    .topbar,.hero,.report-toolbar,.footer-note,.under,.no-print{display:none !important}
+    .wrap{max-width:none;padding:0}
+    #report{padding:0}
+    .sheet{border:none;box-shadow:none;border-radius:0}
+    .section{page-break-inside:avoid}
+    .rep-title,.rep-brand input{border:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wrap topbar-inner">
+    <div class="brand"><span class="mark"></span>Своди</div>
+    <button class="btn btn-primary no-print" id="btnExport" disabled onclick="window.print()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/></svg>
+      Скачать PDF
+    </button>
+  </div>
+</div>
+
+<!-- ===================== HERO / UPLOAD ===================== -->
+<div class="wrap">
+  <section class="hero" id="hero">
+    <div class="eyebrow">Таблица → отчёт · всё в браузере</div>
+    <h1>Отчёт, который <em>не стыдно</em> отправить клиенту</h1>
+    <p class="lede">Загрузите выгрузку из Excel или CSV — продажи, рекламу, финансы. За несколько секунд получите чистую сводку с ключевыми цифрами, графиками и таблицей. Готово к печати в PDF.</p>
+
+    <div class="drop" id="drop">
+      <input type="file" id="file" accept=".csv,.xlsx,.xls,.tsv" style="display:none">
+      <div class="ico">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+      </div>
+      <h3>Перетащите файл сюда</h3>
+      <p>или нажмите, чтобы выбрать на компьютере</p>
+      <div class="formats">CSV · XLSX · XLS · TSV</div>
+    </div>
+
+    <div class="under">
+      <a id="tryDemo">Попробовать на примере →</a>
+      <span class="dot"></span>
+      <span class="privacy">🔒 Файл никуда не отправляется — обработка идёт прямо в вашем браузере</span>
+    </div>
+
+    <div class="feat">
+      <div class="cell"><div class="n">01</div><h4>Понимает ваш формат</h4><p>Сам определяет разделитель, числа, даты и валюту — включая выгрузки из русского Excel с точкой с запятой.</p></div>
+      <div class="cell"><div class="n">02</div><h4>Считает и рисует</h4><p>Ключевые показатели, динамика по времени и топ категорий — без единой формулы вручную.</p></div>
+      <div class="cell"><div class="n">03</div><h4>Ваш бренд на отчёте</h4><p>Впишите название компании и заголовок, распечатайте в PDF и отправьте клиенту как есть.</p></div>
+    </div>
+  </section>
+</div>
+
+<!-- ===================== REPORT ===================== -->
+<div class="wrap">
+  <section id="report">
+    <div class="report-toolbar no-print">
+      <div class="left">
+        <button class="btn btn-ghost" id="btnNew">← Другой файл</button>
+        <span class="filepill" id="filePill"></span>
+      </div>
+      <button class="btn btn-primary" onclick="window.print()">Скачать PDF отчёт</button>
+    </div>
+
+    <div class="sheet" id="sheet">
+      <div class="sheet-head">
+        <div class="row">
+          <div style="flex:1;min-width:240px">
+            <input class="rep-title" id="repTitle" value="Отчёт по данным" spellcheck="false">
+            <div class="rep-meta" id="repMeta"></div>
+          </div>
+          <div class="rep-brand">
+            <div class="lbl">Подготовлено</div>
+            <input id="repCompany" value="Ваша компания" spellcheck="false">
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-h">Ключевые показатели</div>
+        <div class="kpis" id="kpis"></div>
+      </div>
+
+      <div class="section" id="chartSection">
+        <div class="section-h">Визуализация</div>
+        <div class="chart-grid" id="charts"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-h">Данные <span id="rowCount" style="color:var(--muted);text-transform:none;letter-spacing:0;font-family:var(--body)"></span></div>
+        <div class="table-scroll"><table id="table"></table></div>
+        <div class="tbl-note" id="tblNote"></div>
+      </div>
+    </div>
+    <div class="footer-note">Сделано в Своди · данные обработаны локально</div>
+  </section>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+/* ======================================================================
+   Своди — автономный конструктор отчётов.
+   Весь разбор данных и построение графиков — на стороне браузера.
+   CSV/TSV парсится собственным кодом (работает офлайн).
+   XLSX — через SheetJS (грузится с CDN; если офлайн — доступен CSV).
+   ====================================================================== */
+
+const $ = s => document.querySelector(s);
+const el = (t,c) => { const e=document.createElement(t); if(c) e.className=c; return e; };
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),2600); }
+
+/* ---------- ввод файла ---------- */
+const drop=$('#drop'), fileInput=$('#file');
+drop.addEventListener('click',()=>fileInput.click());
+['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('drag');}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('drag');}));
+drop.addEventListener('drop',e=>{ const f=e.dataTransfer.files[0]; if(f) handleFile(f); });
+fileInput.addEventListener('change',e=>{ const f=e.target.files[0]; if(f) handleFile(f); });
+$('#btnNew').addEventListener('click',resetAll);
+$('#tryDemo').addEventListener('click',loadDemo);
+
+function resetAll(){
+  $('#report').classList.remove('on');
+  $('#hero').style.display='';
+  $('#btnExport').disabled=true;
+  fileInput.value='';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function handleFile(file){
+  const name=file.name.toLowerCase();
+  const isExcel=name.endsWith('.xlsx')||name.endsWith('.xls');
+  const reader=new FileReader();
+  reader.onerror=()=>toast('Не удалось прочитать файл. Попробуйте другой.');
+  if(isExcel){
+    if(typeof XLSX==='undefined'){ toast('Для Excel нужен интернет. Офлайн — сохраните файл как CSV.'); return; }
+    reader.onload=e=>{
+      try{
+        const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true});
+        const sheet=wb.Sheets[wb.SheetNames[0]];
+        const rows=XLSX.utils.sheet_to_json(sheet,{header:1,blankrows:false,defval:''});
+        buildFromMatrix(rows.map(r=>r.map(c=>c instanceof Date?fmtDateISO(c):c)),file.name);
+      }catch(err){ console.error(err); toast('Не получилось разобрать Excel-файл.'); }
+    };
+    reader.readAsArrayBuffer(file);
+  }else{
+    reader.onload=e=>{
+      try{ buildFromMatrix(parseDelimited(e.target.result),file.name); }
+      catch(err){ console.error(err); toast('Не получилось разобрать файл.'); }
+    };
+    reader.readAsText(file,'utf-8');
+  }
+}
+
+/* ---------- CSV/TSV парсер (учитывает кавычки и авто-разделитель) ---------- */
+function detectDelimiter(text){
+  const head=text.slice(0,4000).split(/\r?\n/).slice(0,5).join('\n');
+  const counts={',':0,';':0,'\t':0,'|':0};
+  let q=false;
+  for(const ch of head){ if(ch=='"') q=!q; else if(!q && ch in counts) counts[ch]++; }
+  return Object.entries(counts).sort((a,b)=>b[1]-a[1])[0][0];
+}
+function parseDelimited(text){
+  text=text.replace(/^\uFEFF/,''); // BOM
+  const d=detectDelimiter(text);
+  const rows=[]; let row=[], field='', q=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(q){
+      if(c=='"'){ if(text[i+1]=='"'){field+='"';i++;} else q=false; }
+      else field+=c;
+    }else{
+      if(c=='"') q=true;
+      else if(c==d){ row.push(field); field=''; }
+      else if(c=='\n'){ row.push(field); rows.push(row); row=[]; field=''; }
+      else if(c=='\r'){ /* skip */ }
+      else field+=c;
+    }
+  }
+  if(field.length||row.length){ row.push(field); rows.push(row); }
+  return rows.filter(r=>r.some(c=>String(c).trim()!==''));
+}
+
+/* ---------- утилиты типов ---------- */
+function parseNumber(v){
+  if(typeof v==='number') return isFinite(v)?v:null;
+  if(v==null) return null;
+  let s=String(v).trim();
+  if(s==='') return null;
+  s=s.replace(/[₽$€£%\s\u00A0]/g,'');
+  if(!/\d/.test(s)) return null;
+  const hasC=s.includes(','), hasD=s.includes('.');
+  if(hasC && hasD){
+    // десятичный — тот разделитель, что стоит последним; другой убираем как разряды
+    if(s.lastIndexOf(',')>s.lastIndexOf('.')) s=s.replace(/\./g,'').replace(',', '.');
+    else s=s.replace(/,/g,'');
+  }else if(hasC){
+    // только запятая: группировка тысяч (1,234,567) -> убрать; иначе десятичная
+    if(/^-?\d{1,3}(,\d{3})+$/.test(s)) s=s.replace(/,/g,'');
+    else s=s.replace(',', '.');
+  }else if(hasD){
+    // только точка: группировка тысяч (1.234.567) -> убрать; иначе десятичная
+    if(/^-?\d{1,3}(\.\d{3})+$/.test(s)) s=s.replace(/\./g,'');
+  }
+  const n=parseFloat(s);
+  return isFinite(n)?n:null;
+}
+function parseDateVal(v){
+  if(v==null) return null;
+  const s=String(v).trim();
+  if(s==='') return null;
+  let m=s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);        // 2024-01-31
+  if(m) return new Date(+m[1],+m[2]-1,+m[3]);
+  m=s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})/);            // 31.01.2024
+  if(m) return new Date(+m[3],+m[2]-1,+m[1]);
+  return null;
+}
+function detectType(values){
+  const nonEmpty=values.filter(v=>String(v).trim()!=='');
+  if(!nonEmpty.length) return 'empty';
+  const num=nonEmpty.filter(v=>parseNumber(v)!==null).length;
+  const dat=nonEmpty.filter(v=>parseDateVal(v)!==null).length;
+  if(dat/nonEmpty.length>=0.8) return 'date';
+  if(num/nonEmpty.length>=0.8) return 'number';
+  return 'text';
+}
+
+/* ---------- форматирование ---------- */
+function fmtNum(n){
+  if(n==null||!isFinite(n)) return '—';
+  const abs=Math.abs(n);
+  if(abs>=1e9) return (n/1e9).toFixed(2).replace(/\.?0+$/,'')+' млрд';
+  if(abs>=1e6) return (n/1e6).toFixed(2).replace(/\.?0+$/,'')+' млн';
+  if(abs>=1e4) return Math.round(n).toLocaleString('ru-RU');
+  return (Math.round(n*100)/100).toLocaleString('ru-RU');
+}
+function fmtFull(n){ return n==null?'—':n.toLocaleString('ru-RU',{maximumFractionDigits:2}); }
+function fmtDateISO(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function fmtDateShort(d){ return d.toLocaleDateString('ru-RU',{day:'2-digit',month:'short'}); }
+
+/* ---------- построение отчёта ---------- */
+let DATA=null;
+function buildFromMatrix(matrix,filename){
+  if(!matrix||matrix.length<2){ toast('В файле слишком мало строк для отчёта.'); return; }
+  const headers=matrix[0].map((h,i)=>String(h).trim()||('Колонка '+(i+1)));
+  const body=matrix.slice(1);
+  const cols=headers.map((name,i)=>{
+    const raw=body.map(r=>r[i]);
+    const type=detectType(raw);
+    return {name,index:i,type,raw};
+  });
+  DATA={headers,body,cols,filename,rowCount:body.length};
+
+  renderMeta();
+  renderKPIs();
+  renderCharts();
+  renderTable();
+
+  $('#hero').style.display='none';
+  $('#report').classList.add('on');
+  $('#btnExport').disabled=false;
+  $('#repTitle').value = suggestTitle(filename);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function suggestTitle(filename){
+  const base=filename.replace(/\.[^.]+$/,'').replace(/[_-]+/g,' ').trim();
+  return base? base.charAt(0).toUpperCase()+base.slice(1) : 'Отчёт по данным';
+}
+
+function renderMeta(){
+  const now=new Date();
+  $('#repMeta').textContent = DATA.rowCount.toLocaleString('ru-RU')+' записей · '+DATA.headers.length+' колонок · сформировано '+now.toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'});
+  $('#filePill').innerHTML='<span>📄 '+escapeHtml(DATA.filename)+'</span>';
+  $('#rowCount').textContent='('+DATA.rowCount.toLocaleString('ru-RU')+' строк)';
+}
+
+function numericCols(){ return DATA.cols.filter(c=>c.type==='number'); }
+function dateCol(){ return DATA.cols.find(c=>c.type==='date'); }
+function textCols(){ return DATA.cols.filter(c=>c.type==='text'); }
+
+function colNumbers(col){ return col.raw.map(parseNumber).filter(v=>v!==null); }
+
+function renderKPIs(){
+  const box=$('#kpis'); box.innerHTML='';
+  const nums=numericCols();
+  const cards=[];
+
+  cards.push(kpi('Всего записей', DATA.rowCount.toLocaleString('ru-RU'), null, true));
+
+  // Ранжируем числовые колонки по «весу» суммы, берём топ-3 как денежные/объёмные
+  const ranked=nums.map(c=>{const arr=colNumbers(c);const sum=arr.reduce((a,b)=>a+b,0);return {c,arr,sum,avg:arr.length?sum/arr.length:0};})
+                   .sort((a,b)=>Math.abs(b.sum)-Math.abs(a.sum));
+  ranked.slice(0,3).forEach((r,i)=>{
+    cards.push(kpi('Сумма · '+r.c.name, fmtNum(r.sum), 'всего по колонке', i===0));
+  });
+  if(ranked[0]){
+    const r=ranked[0];
+    const mx=Math.max(...r.arr), mn=Math.min(...r.arr);
+    cards.push(kpi('Среднее · '+r.c.name, fmtNum(r.avg), 'на запись', false));
+    cards.push(kpi('Максимум · '+r.c.name, fmtNum(mx), 'мин: '+fmtNum(mn), false));
+  }
+  // Уникальные значения по первой текстовой колонке
+  const tc=textCols()[0];
+  if(tc){
+    const uniq=new Set(tc.raw.map(v=>String(v).trim()).filter(Boolean));
+    cards.push(kpi('Уникальных · '+tc.name, uniq.size.toLocaleString('ru-RU'), 'разных значений', false));
+  }
+  cards.slice(0,6).forEach(c=>box.appendChild(c));
+}
+function kpi(label,val,sub,amber){
+  const d=el('div','kpi'+(amber?' amber':''));
+  d.innerHTML='<div class="k-label">'+escapeHtml(label)+'</div><div class="k-val">'+escapeHtml(val)+'</div>'+(sub?'<div class="k-sub">'+escapeHtml(sub)+'</div>':'');
+  return d;
+}
+
+function renderCharts(){
+  const box=$('#charts'); box.innerHTML='';
+  const dc=dateCol(), nums=numericCols();
+  let made=0;
+
+  // 1) Динамика по времени
+  if(dc && nums.length){
+    const measure=nums.map(c=>({c,sum:colNumbers(c).reduce((a,b)=>a+Math.abs(b),0)})).sort((a,b)=>b.sum-a.sum)[0].c;
+    const pairs=[];
+    DATA.body.forEach(r=>{
+      const d=parseDateVal(r[dc.index]); const v=parseNumber(r[measure.index]);
+      if(d && v!==null) pairs.push([d,v]);
+    });
+    if(pairs.length>=2){
+      pairs.sort((a,b)=>a[0]-b[0]);
+      const agg=new Map();
+      pairs.forEach(([d,v])=>{const k=fmtDateISO(d);agg.set(k,(agg.get(k)||0)+v);});
+      const series=[...agg.entries()].map(([k,v])=>[new Date(k),v]).sort((a,b)=>a[0]-b[0]);
+      box.appendChild(lineChartCard(series, measure.name));
+      made++;
+    }
+  }
+  // 2) Топ категорий по мере
+  const tc=textCols()[0];
+  if(tc && nums.length){
+    const measure=nums.map(c=>({c,sum:colNumbers(c).reduce((a,b)=>a+Math.abs(b),0)})).sort((a,b)=>b.sum-a.sum)[0].c;
+    const agg=new Map();
+    DATA.body.forEach(r=>{
+      const k=String(r[tc.index]).trim()||'(пусто)'; const v=parseNumber(r[measure.index]);
+      if(v!==null) agg.set(k,(agg.get(k)||0)+v);
+    });
+    const top=[...agg.entries()].sort((a,b)=>b[1]-a[1]).slice(0,7);
+    if(top.length){ box.appendChild(barChartCard(top, tc.name, measure.name)); made++; }
+  }else if(tc){
+    // просто частота категорий
+    const agg=new Map();
+    tc.raw.forEach(v=>{const k=String(v).trim()||'(пусто)';agg.set(k,(agg.get(k)||0)+1);});
+    const top=[...agg.entries()].sort((a,b)=>b[1]-a[1]).slice(0,7);
+    if(top.length){ box.appendChild(barChartCard(top, tc.name, 'количество записей')); made++; }
+  }
+
+  if(!made){
+    $('#chartSection').style.display='none';
+  }else{
+    $('#chartSection').style.display='';
+    if(made===1) $('#charts').style.gridTemplateColumns='1fr';
+  }
+}
+
+/* ---- SVG линейный график ---- */
+function lineChartCard(series, name){
+  const card=el('div','chart-card');
+  const W=520,H=210,pad={l:8,r:8,t:14,b:26};
+  const xs=series.map(p=>p[0].getTime()), ys=series.map(p=>p[1]);
+  const minX=Math.min(...xs),maxX=Math.max(...xs);
+  const minY=Math.min(0,...ys),maxY=Math.max(...ys);
+  const px=t=>pad.l+(maxX===minX?0.5:(t-minX)/(maxX-minX))*(W-pad.l-pad.r);
+  const py=v=>H-pad.b-(maxY===minY?0.5:(v-minY)/(maxY-minY))*(H-pad.t-pad.b);
+  let d='',area='';
+  series.forEach((p,i)=>{ const x=px(p[0].getTime()),y=py(p[1]); d+=(i?'L':'M')+x.toFixed(1)+' '+y.toFixed(1)+' '; });
+  area=d+`L${px(maxX).toFixed(1)} ${(H-pad.b).toFixed(1)} L${px(minX).toFixed(1)} ${(H-pad.b).toFixed(1)} Z`;
+  const first=series[0], last=series[series.length-1];
+  let grid='';
+  for(let g=0;g<=2;g++){ const v=minY+(maxY-minY)*g/2; const y=py(v); grid+=`<line x1="${pad.l}" y1="${y}" x2="${W-pad.r}" y2="${y}" stroke="var(--line)" stroke-width="1"/><text x="${pad.l}" y="${y-4}" font-size="10" font-family="var(--mono)" fill="var(--muted)">${fmtNum(v)}</text>`; }
+  card.innerHTML=`<div class="c-title">Динамика: ${escapeHtml(name)}</div><div class="c-sub">${escapeHtml(fmtDateShort(first[0]))} — ${escapeHtml(fmtDateShort(last[0]))}</div>
+  <svg viewBox="0 0 ${W} ${H}"><defs><linearGradient id="fillGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--brand)" stop-opacity=".18"/><stop offset="1" stop-color="var(--brand)" stop-opacity="0"/></linearGradient></defs>
+  ${grid}<path d="${area}" fill="url(#fillGrad)"/><path d="${d}" fill="none" stroke="var(--brand)" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+  <circle cx="${px(last[0].getTime()).toFixed(1)}" cy="${py(last[1]).toFixed(1)}" r="3.5" fill="var(--accent)"/>
+  <text x="${pad.l}" y="${H-8}" font-size="10" font-family="var(--mono)" fill="var(--muted)">${escapeHtml(fmtDateShort(first[0]))}</text>
+  <text x="${W-pad.r}" y="${H-8}" font-size="10" font-family="var(--mono)" fill="var(--muted)" text-anchor="end">${escapeHtml(fmtDateShort(last[0]))}</text></svg>`;
+  return card;
+}
+
+/* ---- горизонтальные бары ---- */
+function barChartCard(rows, dim, measure){
+  const card=el('div','chart-card');
+  const max=Math.max(...rows.map(r=>Math.abs(r[1])))||1;
+  let html=`<div class="c-title">Топ по «${escapeHtml(dim)}»</div><div class="c-sub">по показателю: ${escapeHtml(measure)}</div><div style="margin-top:4px">`;
+  rows.forEach(([k,v])=>{
+    const w=Math.max(2,Math.abs(v)/max*100);
+    html+=`<div class="bar-row"><div class="b-name" title="${escapeHtml(k)}">${escapeHtml(k)}</div><div class="b-track"><div class="b-fill" style="width:${w.toFixed(1)}%"></div></div><div class="b-val">${escapeHtml(fmtNum(v))}</div></div>`;
+  });
+  html+='</div>';
+  card.innerHTML=html;
+  return card;
+}
+
+/* ---- таблица (первые 100 строк) ---- */
+function renderTable(){
+  const t=$('#table'); t.innerHTML='';
+  const thead=el('thead'), htr=el('tr');
+  DATA.cols.forEach(c=>{ const th=el('th', c.type==='number'?'num':''); th.textContent=c.name; htr.appendChild(th); });
+  thead.appendChild(htr); t.appendChild(thead);
+  const tb=el('tbody');
+  const limit=Math.min(100,DATA.body.length);
+  for(let i=0;i<limit;i++){
+    const tr=el('tr');
+    DATA.cols.forEach(c=>{
+      const td=el('td', c.type==='number'?'num':'');
+      const raw=DATA.body[i][c.index];
+      if(c.type==='number'){ const n=parseNumber(raw); td.textContent=n===null?'':fmtFull(n); }
+      else td.textContent=raw==null?'':String(raw);
+      tr.appendChild(td);
+    });
+    tb.appendChild(tr);
+  }
+  t.appendChild(tb);
+  $('#tblNote').textContent = DATA.body.length>limit ? ('Показаны первые '+limit+' из '+DATA.body.length.toLocaleString('ru-RU')+' строк.') : '';
+}
+
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+/* ---------- демо-данные ---------- */
+function loadDemo(){
+  const cats=['Instagram','Google Ads','Яндекс.Директ','Email','SEO','Telegram'];
+  const rows=[['Дата','Канал','Расход','Заявки','Выручка']];
+  const start=new Date(2024,0,1);
+  for(let i=0;i<90;i++){
+    const d=new Date(start.getTime()+i*86400000);
+    const ch=cats[i%cats.length];
+    const spend=Math.round(2000+Math.random()*8000);
+    const leads=Math.round(spend/ (300+Math.random()*400));
+    const rev=Math.round(leads*(4000+Math.random()*6000));
+    rows.push([fmtDateISO(d),ch,spend,leads,rev]);
+  }
+  buildFromMatrix(rows,'Пример: маркетинг Q1.csv');
+  toast('Загружен демо-набор — попробуйте всё на нём');
+}
+</script>
+</body>
+</html>

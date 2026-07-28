@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<!--
+  Навар (navar) — линейка калькуляторов юнит-экономики.
+  © 2026. Все права защищены. Копирование и распространение без разрешения запрещено.
+  Методика: честный учёт мин. удержания комиссии, невыкупов, налоговых вычетов и стоимости денег.
+-->
+
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Навар.Авто — считай сделку до того, как отдал деньги</title>
+<meta name="description" content="Калькулятор сделки для перекупа: навар, навар в день, потолок торга на осмотре и годовой темп. Работает офлайн, данные не покидают браузер.">
+<style>
+  :root{
+    --bg:#101418; --panel:#161B21; --panel-2:#1C232B; --line:#28313C;
+    --text:#F2F5F7; --muted:#8D99A6; --muted-2:#5D6873;
+    --green:#2FD574; --green-deep:#1FA85A;
+    --red:#FF5D62; --amber:#F5B84D;
+    --paper:#F4F6F8; --paper-line:#DFE5EA; --ink:#141A20; --ink-mut:#66717D;
+    --radius:16px; --radius-sm:11px;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.45;-webkit-font-smoothing:antialiased}
+  .num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+
+  header{max-width:1140px;margin:0 auto;padding:30px 24px 10px;display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  .logo{font-size:28px;font-weight:800;letter-spacing:-0.02em}
+  .logo .ru{color:var(--green)}
+  .logo .dot{color:var(--amber);font-weight:800}
+  .tag{font-size:13.5px;color:var(--muted)}
+
+  .wrap{max-width:1140px;margin:0 auto;padding:14px 24px 24px;display:grid;grid-template-columns:1fr 410px;gap:22px;align-items:start}
+  @media(max-width:920px){.wrap{grid-template-columns:1fr;gap:16px}}
+
+  .panel{background:var(--paper);color:var(--ink);border-radius:var(--radius);overflow:hidden}
+  .group{padding:20px 22px;border-bottom:1px solid var(--paper-line)}
+  .group:last-child{border-bottom:none}
+  .group-head{display:flex;align-items:baseline;gap:10px;margin-bottom:15px}
+  .group-title{font-size:14px;font-weight:800;letter-spacing:-0.01em}
+  .group-note{font-size:12px;color:var(--ink-mut);margin-left:auto;text-align:right}
+
+  .field{margin-bottom:13px}
+  .field:last-child{margin-bottom:0}
+  .field label{display:block;font-size:12.5px;color:var(--ink-mut);margin-bottom:6px;font-weight:600}
+  .input-wrap{position:relative;display:flex;align-items:center}
+  .input-wrap .unit{position:absolute;right:12px;font-size:13px;color:#9AA5AF;pointer-events:none;font-weight:700}
+  input.fin{
+    width:100%;font-family:var(--sans);font-size:16px;font-weight:700;color:var(--ink);
+    background:#fff;border:1.5px solid var(--paper-line);border-radius:var(--radius-sm);
+    padding:11px 46px 11px 13px;transition:border-color .12s,box-shadow .12s;font-variant-numeric:tabular-nums;
+  }
+  input.fin:focus{outline:none;border-color:var(--green-deep);box-shadow:0 0 0 3px rgba(47,213,116,.18)}
+  input.fin::-webkit-outer-spin-button,
+  input.fin::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  input.fin{-moz-appearance:textfield}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+  .seg{display:flex;gap:6px;background:#E8ECEF;padding:4px;border-radius:var(--radius-sm)}
+  .seg button{
+    flex:1;font-family:var(--sans);font-size:12.5px;font-weight:700;color:var(--ink-mut);
+    background:transparent;border:none;border-radius:8px;padding:9px 6px;cursor:pointer;transition:.12s;line-height:1.25;
+  }
+  .seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(16,20,24,.12)}
+  .seg button small{display:block;font-weight:500;font-size:10.5px;color:#9AA5AF}
+
+  /* фирменный блок: максимальный закуп */
+  .maxbuy{
+    margin:0 22px 20px;background:#141A20;color:#fff;border-radius:var(--radius-sm);
+    padding:16px 18px;
+  }
+  .maxbuy .k{font-size:12px;color:#8D99A6;font-weight:700}
+  .maxbuy .v{font-size:30px;font-weight:800;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;color:var(--amber);margin:3px 0 2px}
+  .maxbuy .v.warn{color:var(--red);font-size:18px}
+  .maxbuy .note{font-size:11.5px;color:#8D99A6;line-height:1.5}
+  .maxbuy .goal{display:inline-flex;align-items:center;gap:6px}
+  .maxbuy input{
+    width:96px;background:#1C232B;border:1px solid #28313C;color:#fff;border-radius:8px;
+    padding:5px 9px;font-family:var(--sans);font-size:16px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;
+  }
+  .maxbuy input:focus{outline:none;border-color:var(--green-deep)}
+
+  .verdict{position:sticky;top:16px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:24px 22px}
+  @media(max-width:920px){.verdict{position:static}}
+  .v-label{font-size:12.5px;color:var(--muted);font-weight:600}
+  .v-hero{display:flex;align-items:flex-end;gap:10px;margin:6px 0 2px}
+  .v-profit{font-size:48px;font-weight:800;letter-spacing:-0.03em;line-height:1;font-variant-numeric:tabular-nums;transition:color .2s}
+  .v-profit.pos{color:var(--green)}
+  .v-profit.neg{color:var(--red)}
+  .v-per{font-size:13px;color:var(--muted);font-weight:600;padding-bottom:7px}
+  .v-status{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;padding:5px 11px;border-radius:100px;margin-top:5px}
+  .v-status.pos{background:rgba(47,213,116,.13);color:var(--green)}
+  .v-status.neg{background:rgba(255,93,98,.13);color:var(--red)}
+  .v-status .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+
+  .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:20px 0}
+  .metric{background:var(--panel-2);border:1px solid var(--line);border-radius:var(--radius-sm);padding:11px 12px}
+  .metric .k{font-size:11px;color:var(--muted);font-weight:600;margin-bottom:4px}
+  .metric .v{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-0.02em}
+
+  .waterfall{margin:20px 0 4px}
+  .wf-title{font-size:12px;color:var(--muted);font-weight:600;margin-bottom:9px}
+  .wf-bar{display:flex;height:34px;border-radius:9px;overflow:hidden;background:var(--panel-2)}
+  .wf-seg{transition:width .25s ease;min-width:0}
+  .wf-legend{display:flex;flex-wrap:wrap;gap:9px 16px;margin-top:12px}
+  .wf-item{display:flex;align-items:center;gap:6px;font-size:12px;color:#B9C2CC}
+  .wf-item .sw{width:9px;height:9px;border-radius:3px;flex:none}
+  .wf-item .amt{color:#fff;font-weight:700;font-variant-numeric:tabular-nums;margin-left:2px}
+
+  .year{margin-top:20px;padding:14px 16px;background:var(--panel-2);border:1px solid var(--line);border-radius:var(--radius-sm)}
+  .year-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:10px;flex-wrap:wrap}
+  .year-head .lbl{font-size:12.5px;color:var(--muted);font-weight:700}
+  .year-head .gap{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+  .mini{
+    width:60px;background:var(--panel);border:1px solid var(--line);color:#fff;border-radius:8px;
+    padding:5px 8px;font-family:var(--sans);font-size:16px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;
+  }
+  .mini:focus{outline:none;border-color:var(--green-deep)}
+  .m-row{display:flex;justify-content:space-between;font-size:13px;margin-bottom:7px}
+  .m-row:last-child{margin-bottom:0}
+  .m-row .mk{color:#9AA5B1}
+  .m-row .mv{font-weight:800;font-variant-numeric:tabular-nums}
+  .m-row .mv.pos{color:var(--green)}
+  .m-row .mv.neg{color:var(--red)}
+
+  /* сравнение сделок */
+  .compare{max-width:1140px;margin:0 auto 22px;padding:0 24px}
+  .compare-panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px}
+  .compare-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+  .compare-title{font-size:15px;font-weight:800}
+  .compare-sub{font-size:12px;color:var(--muted)}
+  .compare-actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+  .btn{
+    font-family:var(--sans);font-size:12.5px;font-weight:700;cursor:pointer;border-radius:9px;
+    padding:9px 14px;border:1px solid var(--line);background:var(--panel-2);color:var(--text);transition:.12s;
+  }
+  .btn:hover{border-color:var(--green-deep)}
+  .btn.primary{background:var(--green);border-color:var(--green);color:#0B2416}
+  .btn.primary:hover{background:#4BE38A}
+  .name-inline{
+    background:var(--panel-2);border:1px solid var(--line);color:#fff;border-radius:9px;
+    padding:9px 12px;font-family:var(--sans);font-size:16px;font-weight:600;width:200px;
+  }
+  .name-inline:focus{outline:none;border-color:var(--green-deep)}
+  .compare-empty{font-size:13px;color:var(--muted);padding:14px 2px 6px}
+  table.cmp{width:100%;border-collapse:collapse;margin-top:14px;font-size:13px}
+  table.cmp th{text-align:right;font-size:11px;color:var(--muted);font-weight:700;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+  table.cmp th:first-child{text-align:left}
+  table.cmp td{padding:10px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+  table.cmp td:first-child{text-align:left;font-weight:700}
+  table.cmp tr.best td{background:rgba(47,213,116,.07)}
+  table.cmp td.pos{color:var(--green)}
+  table.cmp td.neg{color:var(--red)}
+  table.cmp .del{cursor:pointer;color:var(--muted-2);font-weight:800;background:none;border:none;font-size:15px;padding:2px 6px}
+  table.cmp .del:hover{color:var(--red)}
+  .cmp-scroll{overflow-x:auto}
+
+  .btn:focus-visible,.seg button:focus-visible,.del:focus-visible{outline:2px solid var(--green-deep);outline-offset:2px}
+  @media (prefers-reduced-motion: reduce){*{transition:none !important}}
+  .stickybar{display:none}
+  @media(max-width:920px){
+    body{padding-top:52px}
+    .stickybar{
+      display:flex;position:fixed;top:0;left:0;right:0;z-index:60;align-items:center;gap:10px;
+      background:var(--panel);border-bottom:1px solid var(--line);padding:10px 16px;
+    }
+    .stickybar .sb-k{font-size:11.5px;color:var(--muted);font-weight:700}
+    .stickybar .sb-v{font-size:19px;font-weight:800;font-variant-numeric:tabular-nums;margin-left:auto}
+    .stickybar .sb-v.pos{color:var(--green)}
+    .stickybar .sb-v.neg{color:var(--red)}
+  }
+  .adv-toggle{display:none}
+  @media(max-width:920px){
+    body:not(.expert) .advanced{display:none}
+    .adv-toggle{display:block;margin:0 22px 18px;width:calc(100% - 44px);font-family:var(--sans);
+      font-size:13.5px;font-weight:700;color:var(--ink);background:#fff;border:1.5px dashed var(--paper-line);
+      border-radius:var(--radius-sm);padding:12px;cursor:pointer}
+  }
+  footer{max-width:1140px;margin:0 auto;padding:0 24px 44px;font-size:12px;color:var(--muted-2);line-height:1.65}
+  footer b{color:var(--muted);font-weight:700}
+</style>
+</head>
+<body>
+<div class="stickybar" style="cursor:pointer" onclick="var v=document.querySelector('.verdict'); if(v&&v.scrollIntoView) v.scrollIntoView({behavior:'smooth'})"><span class="sb-k">Навар со сделки</span><span class="sb-v pos num" id="sb-profit" aria-live="polite">—</span></div>
+
+<header>
+  <span class="logo">Нав<span class="ru">ар</span><span class="dot">.Авто</span></span>
+  <span class="tag">считай сделку до того, как отдал деньги — навар, навар в день и потолок торга</span>
+</header>
+<div style="max-width:1140px;margin:0 auto;padding:0 24px 8px;font-size:13px;color:#8D99A6;line-height:1.5">Начни с двух цифр — <b style="color:#F2F5F7">закуп</b> и <b style="color:#F2F5F7">цена продажи</b>. Остальное можно не трогать: получишь честную первую прикидку, потом уточнишь.</div>
+
+<div class="wrap">
+
+  <!-- ===== INPUTS ===== -->
+  <div class="panel">
+
+    <div class="group">
+      <div class="group-head">
+        <span class="group-title">Машина</span>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="buy">Цена закупа</label>
+          <div class="input-wrap"><input type="text" class="fin" inputmode="decimal" id="buy" data-money value="450000" min="0" step="1000"><span class="unit">₽</span></div>
+        </div>
+        <div class="field">
+          <label for="sale">Планируемая цена продажи</label>
+          <div class="input-wrap"><input type="text" class="fin" inputmode="decimal" id="sale" data-money value="600000" min="0" step="1000"><span class="unit">₽</span></div>
+        </div>
+      </div>
+      <div class="field">
+        <label for="haggle">Торг при продаже (сколько обычно уступаешь)</label>
+        <div class="input-wrap"><input type="text" class="fin" inputmode="decimal" id="haggle" value="3" min="0" max="50"><span class="unit">%</span></div>
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="group-head">
+        <span class="group-title">Вложения в машину</span>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="repair">Ремонт и запчасти</label>
+          <div class="input-wrap"><input type="text" class="fin" inputmode="decimal" id="repair" data-money value="35000" min="0" step="500"><span class="unit">₽</span></div>
+        </div>
+        <div class="field">
+          <label for="detail">Предпродажка (мойка, химчистка, полировка)</label>
+          <div class="input-wrap"><input type="text" class="fin" inputmode="decimal" id="detail" data-money value="8000" min="0" step="500"><span class="unit">₽</span></div>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="docs">Поиск, перегон, оформление (осмотры, бензин, ОСАГО, ДКП)</label>
+          <div class="input-wrap"><input type="text" class="fin" inputmode="decimal" id="docs" data-money value="2000" min="0" step="100"><span class="unit">₽</span></div>
+        </div>
+        <div class="field">
+          <label for="ads">Размещение и продвижение (в «Авто» размещение платное)</label>
+          <div class="input-wrap"><input type="text" class="fin" inputmode="decimal" id="ads" data-money value="3000" min="0" step="100"><span class="unit">₽</span></div>
+        </div>
+      </div>
+    </div>
+
+    <button class="adv-toggle" id="adv-toggle">Точная настройка: комиссия, продвижение, налоги ▾</button>
+    <div class="group advanced">
+      <div class="group-head">
+        <span class="group-title">Время и площадка</span>
+        <span class="group-note">время — тоже деньги перекупа</span>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="days">Дней от закупа до продажи</label>
+          <div class="input-wrap"><input type="text" class="fin" inputmode="decimal" id="days" value="21" min="1"><span class="unit">дн</span></div>
+        </div>
+        <div class="field">
+          <label for="parking">Стоянка / хранение в день</label>
+          <div class="input-wrap"><input type="text" class="fin" inputmode="decimal" id="parking" data-money value="0" min="0" step="10"><span class="unit">₽</span></div>
+        </div>
+      </div>
+      <div class="field">
+        <label for="rate">Деньги под процент — ставка по кредиту/займу (0 — если свои)</label>
+        <div class="input-wrap"><input type="text" inputmode="decimal" class="fin" id="rate" value="0"><span class="unit">%/год</span></div>
+      </div>
+      <div class="field">
+        <label for="fee">Комиссия площадки или салона с продажи (если продаёшь не сам)</label>
+        <div class="input-wrap"><input type="text" class="fin" inputmode="decimal" id="fee" value="0" min="0" max="50"><span class="unit">%</span></div>
+      </div>
+    </div>
+
+    <div class="group advanced">
+      <div class="group-head">
+        <span class="group-title">Налог</span>
+      </div>
+      <div class="seg" id="tax-seg">
+        <button data-tax="none" class="on">Не считаю<small>на свой риск</small></button>
+        <button data-tax="ndfl">НДФЛ 13%<small>по документам закупа</small></button>
+      </div>
+    </div>
+
+    <!-- ФИРМЕННАЯ ФИШКА -->
+    <div class="maxbuy">
+      <div class="k">ПОТОЛОК ТОРГА — максимум, который можно отдать за машину,
+        чтобы заработать <span class="goal"><input type="text" class="fin" inputmode="decimal" id="goal" data-money value="80000" min="0" step="5000"> ₽</span>
+      </div>
+      <div class="v num" id="maxbuy">—</div>
+      <div class="note">Считается от твоей цены продажи и всех расходов выше. Назвал продавец больше — разворачивайся или дожимай торг.</div>
+      <div class="note" style="margin-top:8px">Выезжать на осмотр можно на объявления до <b style="color:#fff" id="adprice">—</b> (продавцы уступают ~<span class="goal"><input type="number" id="buy-haggle" class="mini num fin" value="5" style="width:52px"></span>%)</div>
+    </div>
+
+  </div>
+
+  <!-- ===== VERDICT ===== -->
+  <div class="verdict">
+    <div class="v-label">Навар со сделки</div>
+    <div class="v-hero">
+      <span class="v-profit pos num" id="profit" aria-live="polite">—</span>
+      <span class="v-per">₽</span>
+    </div>
+    <span class="v-status pos" id="status"><span class="dot"></span><span id="status-txt">—</span></span>
+
+    <div class="metrics">
+      <div class="metric"><div class="k">Навар в день</div><div class="v num" id="perday">—</div></div>
+      <div class="metric" title="Навар / (закуп + ремонт + предпродажка)"><div class="k">На вложенный ₽</div><div class="v num" id="roi">—</div></div>
+      <div class="metric"><div class="k">Маржа</div><div class="v num" id="margin">—</div></div>
+    </div>
+
+    <div class="waterfall">
+      <div class="wf-title">Куда уходит цена продажи</div>
+      <div class="wf-bar" id="wf-bar"></div>
+      <div class="wf-legend" id="wf-legend"></div>
+    </div>
+
+    <div class="year">
+      <div class="year-head">
+        <span class="lbl">Годовой темп</span>
+        <span class="gap">поиск следующей: <input type="text" inputmode="decimal" class="mini num fin" id="gapdays" value="7" min="0"> дн</span>
+      </div>
+      <div class="m-row"><span class="mk">Сделок в год при таком цикле</span><span class="mv num" id="y-deals">—</span></div>
+      <div class="m-row"><span class="mk">Навар за год</span><span class="mv num pos" id="y-profit">—</span></div>
+      <div class="m-row"><span class="mk">Годовая доходность капитала</span><span class="mv num" id="y-roi">—</span></div>
+      <div class="m-row"><span class="mk">НДФЛ за год при этом темпе</span><span class="mv num" id="y-tax">—</span></div>
+      <div style="font-size:11px;color:#5D6873;margin-top:8px;line-height:1.5">Линейная оценка при ровном темпе. Сезон, простои и зависшие машины её режут — смотри стресс-тест.</div>
+    </div>
+
+    <div class="year" style="margin-top:12px">
+      <div class="year-head">
+        <span class="lbl">А если зависнет?</span>
+        <span class="gap">+<input type="text" inputmode="decimal" class="mini num fin" id="st-days" value="30"> дн, −<input type="text" inputmode="decimal" class="mini num fin" id="st-disc" value="5">% цены, ремонт +<input type="text" inputmode="decimal" class="mini num fin" id="st-reppct" value="5" style="width:52px">% закупа</span>
+      </div>
+      <div class="m-row"><span class="mk">Навар при зависании</span><span class="mv num" id="st-net">—</span></div>
+      <div class="m-row"><span class="mk">Навар в день станет</span><span class="mv num" id="st-perday">—</span></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== СРАВНЕНИЕ СДЕЛОК ===== -->
+<div class="compare">
+  <div class="compare-panel">
+    <div class="compare-head">
+      <div>
+        <div class="compare-title">Мои сделки</div>
+        <div class="compare-sub">Сохраняй варианты и сравнивай, какая машина кормит лучше. Данные живут, пока открыта вкладка: закроешь — сотрутся. Жми «Экспорт в файл».</div>
+      </div>
+      <div class="compare-actions">
+        <input type="text" class="name-inline" id="itemname" placeholder="Например: Королла 2012" maxlength="40">
+        <button class="btn primary" id="save-item">Сохранить сделку</button>
+        <button class="btn" id="export-items">Экспорт в файл</button>
+        <button class="btn" id="import-items">Импорт из файла</button>
+        <button class="btn" id="share-link" title="Скопировать ссылку — откроется с этими же цифрами и таблицей">Ссылка на расчёт</button>
+        <button class="btn" id="export-card" title="PNG-карточка с результатом — кинуть в чат">Картинка для чата</button>
+        <input type="file" id="import-file" accept=".json" style="display:none">
+      </div>
+    </div>
+    <div class="compare-empty" id="cmp-empty">Пока пусто. Заполни расчёт выше, впиши название машины и нажми «Сохранить сделку».</div>
+    <div class="cmp-scroll">
+      <table class="cmp" id="cmp-table" style="display:none">
+        <thead><tr>
+          <th data-key="name">Машина ⇅</th><th data-key="buy">Закуп ⇅</th><th data-key="sale">Продажа ⇅</th><th data-key="net">Навар ⇅</th><th data-key="perday">₽/день ⇅</th><th data-key="roi">ROI ⇅</th><th data-key="tax">Налог ⇅</th><th></th>
+        </tr></thead>
+        <tbody id="cmp-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <b>Навар.Авто</b> v4.1 · формулы сверены: июль 2026 · © 2026 Навар, все права защищены. Считает всё в браузере, ничего никуда не отправляет и работает без интернета. Налоговый блок упрощён: НДФЛ 13% считается с разницы «продажа − закуп» при владении менее 3 лет и использовании вычета по документам о покупке; систематическая перепродажа автомобилей может быть признана предпринимательской деятельностью с иными налоговыми последствиями. Это справочный расчёт, а не налоговая или юридическая консультация.
+</footer>
+
+<script>/* lz-string v1.5 (MIT, pieroxy) — завендорено для офлайна */
+var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",n="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-$",e={};function t(r,o){if(!e[r]){e[r]={};for(var n=0;n<r.length;n++)e[r][r.charAt(n)]=n}return e[r][o]}var i={compressToBase64:function(r){if(null==r)return"";var n=i._compress(r,6,function(r){return o.charAt(r)});switch(n.length%4){default:case 0:return n;case 1:return n+"===";case 2:return n+"==";case 3:return n+"="}},decompressFromBase64:function(r){return null==r?"":""==r?null:i._decompress(r.length,32,function(n){return t(o,r.charAt(n))})},compressToUTF16:function(o){return null==o?"":i._compress(o,15,function(o){return r(o+32)})+" "},decompressFromUTF16:function(r){return null==r?"":""==r?null:i._decompress(r.length,16384,function(o){return r.charCodeAt(o)-32})},compressToUint8Array:function(r){for(var o=i.compress(r),n=new Uint8Array(2*o.length),e=0,t=o.length;e<t;e++){var s=o.charCodeAt(e);n[2*e]=s>>>8,n[2*e+1]=s%256}return n},decompressFromUint8Array:function(o){if(null==o)return i.decompress(o);for(var n=new Array(o.length/2),e=0,t=n.length;e<t;e++)n[e]=256*o[2*e]+o[2*e+1];var s=[];return n.forEach(function(o){s.push(r(o))}),i.decompress(s.join(""))},compressToEncodedURIComponent:function(r){return null==r?"":i._compress(r,6,function(r){return n.charAt(r)})},decompressFromEncodedURIComponent:function(r){return null==r?"":""==r?null:(r=r.replace(/ /g,"+"),i._decompress(r.length,32,function(o){return t(n,r.charAt(o))}))},compress:function(o){return i._compress(o,16,function(o){return r(o)})},_compress:function(r,o,n){if(null==r)return"";var e,t,i,s={},u={},a="",p="",c="",l=2,f=3,h=2,d=[],m=0,v=0;for(i=0;i<r.length;i+=1)if(a=r.charAt(i),Object.prototype.hasOwnProperty.call(s,a)||(s[a]=f++,u[a]=!0),p=c+a,Object.prototype.hasOwnProperty.call(s,p))c=p;else{if(Object.prototype.hasOwnProperty.call(u,c)){if(c.charCodeAt(0)<256){for(e=0;e<h;e++)m<<=1,v==o-1?(v=0,d.push(n(m)),m=0):v++;for(t=c.charCodeAt(0),e=0;e<8;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}else{for(t=1,e=0;e<h;e++)m=m<<1|t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t=0;for(t=c.charCodeAt(0),e=0;e<16;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}0==--l&&(l=Math.pow(2,h),h++),delete u[c]}else for(t=s[c],e=0;e<h;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;0==--l&&(l=Math.pow(2,h),h++),s[p]=f++,c=String(a)}if(""!==c){if(Object.prototype.hasOwnProperty.call(u,c)){if(c.charCodeAt(0)<256){for(e=0;e<h;e++)m<<=1,v==o-1?(v=0,d.push(n(m)),m=0):v++;for(t=c.charCodeAt(0),e=0;e<8;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}else{for(t=1,e=0;e<h;e++)m=m<<1|t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t=0;for(t=c.charCodeAt(0),e=0;e<16;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}0==--l&&(l=Math.pow(2,h),h++),delete u[c]}else for(t=s[c],e=0;e<h;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;0==--l&&(l=Math.pow(2,h),h++)}for(t=2,e=0;e<h;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;for(;;){if(m<<=1,v==o-1){d.push(n(m));break}v++}return d.join("")},decompress:function(r){return null==r?"":""==r?null:i._decompress(r.length,32768,function(o){return r.charCodeAt(o)})},_decompress:function(o,n,e){var t,i,s,u,a,p,c,l=[],f=4,h=4,d=3,m="",v=[],g={val:e(0),position:n,index:1};for(t=0;t<3;t+=1)l[t]=t;for(s=0,a=Math.pow(2,2),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;switch(s){case 0:for(s=0,a=Math.pow(2,8),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;c=r(s);break;case 1:for(s=0,a=Math.pow(2,16),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;c=r(s);break;case 2:return""}for(l[3]=c,i=c,v.push(c);;){if(g.index>o)return"";for(s=0,a=Math.pow(2,d),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;switch(c=s){case 0:for(s=0,a=Math.pow(2,8),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;l[h++]=r(s),c=h-1,f--;break;case 1:for(s=0,a=Math.pow(2,16),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;l[h++]=r(s),c=h-1,f--;break;case 2:return v.join("")}if(0==f&&(f=Math.pow(2,d),d++),l[c])m=l[c];else{if(c!==h)return null;m=i+i.charAt(0)}v.push(m),l[h++]=i+m.charAt(0),i=m,0==--f&&(f=Math.pow(2,d),d++)}}};return i}();"function"==typeof define&&define.amd?define(function(){return LZString}):"undefined"!=typeof module&&null!=module?module.exports=LZString:"undefined"!=typeof angular&&null!=angular&&angular.module("LZString",[]).factory("LZString",function(){return LZString});
+</script>
+<script>
+(function(){
+  "use strict";
+  var tax = "none";
+
+  function val(id){ var v = parseFloat(String(document.getElementById(id).value).replace(/[\s\u00A0\u202F]/g,"").replace(",",".")); return isNaN(v) ? 0 : v; }
+  function fmt(n){
+    var neg = n < 0; n = Math.abs(Math.round(n));
+    var s = n.toString().replace(/\B(?=(\d{3})+(?!\d))/g,"\u00A0");
+    return (neg?"−":"") + s;
+  }
+  function pct0(n){ return (n>=0?"":"−") + Math.abs(n).toFixed(0) + "%"; }
+
+  document.querySelectorAll("#tax-seg button").forEach(function(b){
+    b.addEventListener("click", function(){
+      document.querySelectorAll("#tax-seg button").forEach(function(x){x.classList.remove("on")});
+      b.classList.add("on"); tax = b.dataset.tax; recompute();
+    });
+  });
+  document.querySelectorAll("input.fin").forEach(function(el){
+    el.addEventListener("input", recompute);
+    el.addEventListener("focus", function(){ var b=document.querySelector(".stickybar"); if(b) b.style.display="none"; });
+    el.addEventListener("blur", function(){ var b=document.querySelector(".stickybar"); if(b) b.style.display=""; });
+  });
+  document.querySelectorAll("input.fin[data-money]").forEach(function(el){
+    el.addEventListener("blur", function(){ var v = val(this.id); if(v) this.value = fmt(v); });
+    el.addEventListener("focus", function(){ this.value = String(this.value).replace(/[\s\u00A0]/g,""); });
+  });
+
+  function calc(buy, o){
+    var saleReal = o.sale * (1 - o.haggle);
+    var feeAmt = saleReal * o.fee;
+    var hold = o.parking * o.days;
+    var capCost = (buy + o.repair + o.detail) * o.rate / 365 * o.days;
+    var costs = o.repair + o.detail + o.docs + o.ads + hold + capCost;
+    var pre = saleReal - buy - costs - feeAmt;
+    var taxAmt = 0;
+    if(tax === "ndfl"){
+      var base = saleReal - buy;
+      taxAmt = base > 0 ? base * 0.13 : 0;
+    }
+    return {saleReal:saleReal, feeAmt:feeAmt, hold:hold, capCost:capCost, costs:costs, taxAmt:taxAmt, net:pre - taxAmt};
+  }
+
+  // максимальный закуп для целевого навара — бинарным поиском (устойчиво к кускам налога)
+  function maxBuyFor(goal, o){
+    var lo = 0, hi = o.sale * 2 + 1000000;
+    if(calc(0,o).net < goal) return NaN; // даже даром машина не даёт цель
+    for(var i=0;i<60;i++){
+      var mid = (lo+hi)/2;
+      if(calc(mid,o).net >= goal) lo = mid; else hi = mid;
+    }
+    return lo;
+  }
+
+  function recompute(){
+    var o = {
+      sale:val("sale"), haggle:Math.max(0,Math.min(50,val("haggle")))/100,
+      repair:val("repair"), detail:val("detail"), docs:val("docs"), ads:val("ads"),
+      days:Math.max(1,val("days")), parking:val("parking"),
+      fee:Math.max(0,Math.min(50,val("fee")))/100,
+      rate:Math.max(0,val("rate"))/100
+    };
+    var buy = val("buy");
+    var r = calc(buy, o);
+
+    // hero
+    var pEl = document.getElementById("profit");
+    pEl.textContent = fmt(r.net);
+    pEl.className = "v-profit num " + (r.net >= 0 ? "pos" : "neg");
+    var sb = document.getElementById("sb-profit");
+    sb.textContent = fmt(r.net) + " ₽";
+    sb.className = "sb-v num " + (r.net >= 0 ? "pos" : "neg");
+    scheduleHash();
+    var stEl = document.getElementById("status"), stTxt = document.getElementById("status-txt");
+    if(r.net >= 0){ stEl.className = "v-status pos"; stTxt.textContent = "Сделка кормит"; }
+    else { stEl.className = "v-status neg"; stTxt.textContent = "Сделка в минус — не бери"; }
+
+    // metrics
+    var perday = r.net / o.days;
+    var invested = buy + o.repair + o.detail;
+    var roi = invested > 0 ? r.net / invested * 100 : 0;
+    var margin = r.saleReal > 0 ? r.net / r.saleReal * 100 : 0;
+    document.getElementById("perday").textContent = fmt(perday) + " ₽";
+    document.getElementById("roi").textContent = pct0(roi);
+    document.getElementById("margin").textContent = pct0(margin);
+
+    // maxbuy
+    var goal = Math.max(0, val("goal"));
+    var mb = maxBuyFor(goal, o);
+    var mbEl = document.getElementById("maxbuy");
+    var sellerHaggle = Math.max(0, Math.min(30, val("buy-haggle")))/100;
+    var adEl = document.getElementById("adprice");
+    if(isNaN(mb)){ mbEl.textContent = "цель недостижима при этой цене продажи"; mbEl.className = "v num warn"; adEl.textContent = "—"; }
+    else { mbEl.textContent = fmt(mb) + " ₽"; mbEl.className = "v num"; adEl.textContent = fmt(mb/(1-sellerHaggle)) + " ₽"; }
+
+    // waterfall (от реальной цены продажи)
+    var parts = [
+      {k:"Закуп",            v:buy,       c:"#7A828C"},
+      {k:"Ремонт и запчасти",v:o.repair,  c:"#4AA3FF"},
+      {k:"Предпродажка",     v:o.detail,  c:"#B48CFF"},
+      {k:"Оформление и реклама", v:o.docs+o.ads, c:"#5FB6C9"},
+      {k:"Стоянка",          v:r.hold,    c:"#8A93D6"},
+      {k:"Проценты по деньгам",v:r.capCost, c:"#D67BA8"},
+      {k:"Комиссия площадки",v:r.feeAmt,  c:"#1FA85A"},
+      {k:"Налог",            v:r.taxAmt,  c:"#F5B84D"}
+    ];
+    var costsSum = parts.reduce(function(s,p){return s+p.v},0);
+    var denom = Math.max(r.saleReal, costsSum);
+    var bar = document.getElementById("wf-bar"), legend = document.getElementById("wf-legend");
+    bar.innerHTML = ""; legend.innerHTML = "";
+    parts.forEach(function(p){
+      if(p.v <= 0) return;
+      var seg = document.createElement("div");
+      seg.className = "wf-seg";
+      seg.style.width = (p.v/denom*100)+"%";
+      seg.style.background = p.c;
+      bar.appendChild(seg);
+      var it = document.createElement("div");
+      it.className = "wf-item";
+      it.innerHTML = '<span class="sw" style="background:'+p.c+'"></span>'+p.k+' <span class="amt">'+fmt(p.v)+'₽</span>';
+      legend.appendChild(it);
+    });
+    if(r.net > 0){
+      var seg2 = document.createElement("div");
+      seg2.className = "wf-seg";
+      seg2.style.width = (r.net/denom*100)+"%";
+      seg2.style.background = "#EAF2F7";
+      bar.appendChild(seg2);
+      var it2 = document.createElement("div");
+      it2.className = "wf-item";
+      it2.innerHTML = '<span class="sw" style="background:#EAF2F7"></span>Твой навар <span class="amt">'+fmt(r.net)+'₽</span>';
+      legend.appendChild(it2);
+    } else if(r.net < 0){
+      var it3 = document.createElement("div");
+      it3.className = "wf-item";
+      it3.innerHTML = '<span class="sw" style="background:#FF5D62"></span>Минус <span class="amt" style="color:#FF5D62">'+fmt(r.net)+'₽</span>';
+      legend.appendChild(it3);
+    }
+
+    // стресс-тест «зависла»: дольше стоит + скидка при продаже
+    var stDays = Math.max(0, val("st-days")), stDisc = Math.max(0, Math.min(50, val("st-disc")))/100;
+    var stRep = buy * Math.max(0, val("st-reppct"))/100;
+    var oS = {sale:o.sale, haggle:Math.min(0.95, o.haggle + stDisc), repair:o.repair + stRep, detail:o.detail,
+              docs:o.docs, ads:o.ads, days:o.days + stDays, parking:o.parking, fee:o.fee, rate:o.rate};
+    var rS = calc(buy, oS);
+    var stNet = document.getElementById("st-net"), stPd = document.getElementById("st-perday");
+    stNet.textContent = fmt(rS.net)+" ₽";
+    stNet.className = "mv num " + (rS.net>=0?"pos":"neg");
+    stPd.textContent = fmt(rS.net/oS.days)+" ₽";
+    stPd.className = "mv num " + (rS.net>=0?"pos":"neg");
+
+    // год
+    var gap = Math.max(0, val("gapdays"));
+    var cycle = o.days + gap;
+    var deals = cycle > 0 ? 365/cycle : 0;
+    var yProfit = r.net * deals;
+    var yRoi = invested > 0 ? yProfit/invested*100 : 0;
+    document.getElementById("y-deals").textContent = deals.toFixed(1).replace(".",",");
+    var yp = document.getElementById("y-profit");
+    yp.textContent = fmt(yProfit)+" ₽";
+    yp.className = "mv num " + (yProfit>=0?"pos":"neg");
+    document.getElementById("y-roi").textContent = pct0(yRoi);
+    document.getElementById("y-tax").textContent = (tax==="none") ? "— (не считаешь)" : fmt(r.taxAmt*deals)+" ₽";
+  }
+
+
+  /* ---- состояние в URL: автосохранение и «Ссылка на расчёт» ---- */
+  var HASH_IDS = ["buy","sale","haggle","repair","detail","docs","ads","days","parking","fee","goal","gapdays","rate"];
+  var hashTimer = null;
+  function writeHash(){
+    try{
+      var st = {v:1, t:tax, i:{}};
+      HASH_IDS.forEach(function(id){ st.i[id] = val(id); });
+      if(typeof items !== "undefined" && items.length) st.s = items.map(function(it){ return {n:it.name, t:it.tax, i:it.inputs}; });
+      var h = LZString.compressToEncodedURIComponent(JSON.stringify(st));
+      try { history.replaceState(null, "", "#" + h); }
+      catch(e2) { location.hash = h; }  // file:// в Safari/jsdom не даёт replaceState
+      if(location.hash.replace(/^#/,"") !== h) location.hash = h;
+    }catch(e){}
+  }
+  function scheduleHash(){ clearTimeout(hashTimer); hashTimer = setTimeout(writeHash, 800); }
+  function restoreHash(){
+    try{
+      var h = location.hash.replace(/^#/, "");
+      if(!h) return;
+      var st = JSON.parse(LZString.decompressFromEncodedURIComponent(h));
+      if(!st || st.v !== 1 || !st.i) return;
+      HASH_IDS.forEach(function(id){
+        if(st.i[id] !== undefined) document.getElementById(id).value = st.i[id];
+      });
+      if(st.s && Array.isArray(st.s)) window.__navarPendingItems = st.s;
+      if(st.t){
+        var b = document.querySelector('#tax-seg button[data-tax="' + st.t + '"]');
+        if(b){
+          document.querySelectorAll("#tax-seg button").forEach(function(x){x.classList.remove("on")});
+          b.classList.add("on"); tax = st.t;
+        }
+      }
+    }catch(e){}
+  }
+
+  function exportCard(title, subtitle, rows){
+    var cv = document.createElement("canvas"); cv.width = 1000; cv.height = 600;
+    var ctx = cv.getContext && cv.getContext("2d");
+    if(!ctx){ alert("Браузер не поддерживает экспорт картинки"); return; }
+    function clip(t){ t = String(t); return t.length > 24 ? t.slice(0,23) + "…" : t; }
+    ctx.fillStyle = "#101418"; ctx.fillRect(0,0,1000,600);
+    ctx.fillStyle = "#2FD574"; ctx.font = "700 34px -apple-system,Segoe UI,Roboto,sans-serif";
+    ctx.fillText(title, 48, 66);
+    ctx.fillStyle = "#8D99A6"; ctx.font = "600 24px -apple-system,Segoe UI,Roboto,sans-serif";
+    ctx.fillText(clip(subtitle), 48, 104);
+    var p = document.getElementById("profit").textContent;
+    ctx.fillStyle = (p.indexOf("−") === 0) ? "#FF5D62" : "#2FD574";
+    ctx.font = "800 92px -apple-system,Segoe UI,Roboto,sans-serif";
+    ctx.fillText(clip(p + " ₽"), 48, 210);
+    ctx.font = "600 26px -apple-system,Segoe UI,Roboto,sans-serif";
+    var y = 286;
+    rows.forEach(function(r){
+      var el = document.getElementById(r[1]); if(!el) return;
+      ctx.fillStyle = "#8D99A6"; ctx.fillText(r[0], 48, y);
+      ctx.fillStyle = "#F2F5F7"; ctx.fillText(clip(el.textContent), 520, y);
+      y += 52;
+    });
+    ctx.fillStyle = "#5D6873"; ctx.font = "500 20px -apple-system,Segoe UI,Roboto,sans-serif";
+    ctx.fillText("Посчитано в «Навар» v4.3 — честная юнит-экономика", 48, 560);
+    function save(url){ var a = document.createElement("a"); a.href = url; a.download = "navar-card.png"; a.click(); }
+    try {
+      if(cv.toBlob) cv.toBlob(function(b){ if(b){ var u = URL.createObjectURL(b); save(u); setTimeout(function(){URL.revokeObjectURL(u);},2000); } else save(cv.toDataURL("image/png")); }, "image/png");
+      else save(cv.toDataURL("image/png"));
+    } catch(e){ alert("Не удалось сохранить картинку"); }
+  }
+
+  function shareLink(){
+    writeHash();
+    var url = location.href;
+    if(url.length > 3500 && !window.__longWarned){ window.__longWarned = 1; alert("Ссылка получилась длинной — в мессенджере может обрезаться. Для большого набора надёжнее «Экспорт в файл»."); }
+    var done = function(){ var b=document.getElementById("share-link"); if(b){ var t=b.textContent; b.textContent="Скопировано ✓"; setTimeout(function(){b.textContent=t;},1500);} };
+    if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, function(){ prompt("Скопируй ссылку на расчёт:", url); });
+    else prompt("Скопируй ссылку на расчёт:", url);
+  }
+
+  restoreHash();
+  document.querySelectorAll("input.fin[data-money]").forEach(function(el){ var v = val(el.id); if(v) el.value = fmt(v); });
+  recompute();
+
+  /* ---------- Мои сделки ---------- */
+  var items = [];
+  var INPUT_IDS = ["buy","sale","haggle","repair","detail","docs","ads","days","parking","fee","goal","gapdays","rate"];
+
+  function computeItem(name, taxMode, inp){
+    var i = {};
+    INPUT_IDS.forEach(function(id){ var v = parseFloat(inp && inp[id]); i[id] = isNaN(v) ? 0 : v; });
+    var s = {
+      name: String(name || "Без названия").slice(0,40),
+      tax: (["none","ndfl"].indexOf(taxMode) >= 0 ? taxMode : "none"),
+      inputs: i
+    };
+    var o = {sale:i.sale, haggle:Math.max(0,Math.min(50,i.haggle))/100, repair:i.repair, detail:i.detail,
+             docs:i.docs, ads:i.ads, days:Math.max(1,i.days), parking:i.parking, fee:Math.max(0,Math.min(50,i.fee))/100,
+             rate:Math.max(0,i.rate)/100};
+    var saleReal = o.sale * (1 - o.haggle);
+    var feeAmt = saleReal * o.fee;
+    var hold = o.parking * o.days;
+    var capCost = (i.buy + o.repair + o.detail) * o.rate / 365 * o.days;
+    var pre = saleReal - i.buy - (o.repair + o.detail + o.docs + o.ads + hold + capCost) - feeAmt;
+    var t = 0;
+    if(s.tax === "ndfl"){ var base = saleReal - i.buy; t = base > 0 ? base * 0.13 : 0; }
+    s.net = pre - t;
+    s.perday = s.net/o.days;
+    var invested = i.buy + i.repair + i.detail;
+    s.roi = invested>0 ? s.net/invested*100 : 0;
+    return s;
+  }
+
+  function taxLabel(t){ return {none:"—", ndfl:"НДФЛ 13%"}[t] || "—"; }
+
+  function snapshot(){
+    var inp = {};
+    INPUT_IDS.forEach(function(id){ inp[id] = val(id); });
+    var nm = document.getElementById("itemname").value.trim() || "Сделка " + (items.length + 1);
+    return computeItem(nm, tax, inp);
+  }
+
+
+  var sortState = {key:null, dir:-1};
+  function bindRowActions(){
+    document.querySelectorAll("#cmp-body .del[data-ix]").forEach(function(b){
+      b.addEventListener("click", function(){
+        var ix = parseInt(b.dataset.ix,10);
+        var sure = true;
+        try { if(typeof window.confirm === "function"){ var r = window.confirm("Удалить «" + items[ix].name + "»?"); if(r === false) sure = false; } } catch(e){}
+        if(!sure) return;
+        items.splice(ix,1); renderItems();
+      });
+    });
+    document.querySelectorAll("#cmp-body .del[data-edit]").forEach(function(b){
+      b.addEventListener("click", function(){
+        var it = items[parseInt(b.dataset.edit,10)]; if(!it) return;
+        Object.keys(it.inputs).forEach(function(id){ var el=document.getElementById(id); if(el) el.value = it.inputs[id]; });
+        var tb = document.querySelector('#tax-seg button[data-tax="'+it.tax+'"]');
+        if(tb){ document.querySelectorAll("#tax-seg button").forEach(function(x){x.classList.remove("on")}); tb.classList.add("on"); tax = it.tax; }
+        document.getElementById("itemname").value = it.name;
+        recompute();
+        window.scrollTo(0,0);
+      });
+    });
+  }
+  document.querySelectorAll("#cmp-table th[data-key]").forEach(function(th){
+    th.style.cursor = "pointer";
+    th.addEventListener("click", function(){
+      var k = th.dataset.key;
+      if(sortState.key === k) sortState.dir *= -1; else { sortState.key = k; sortState.dir = -1; }
+      renderItems();
+    });
+  });
+
+  function escapeHtml(s){ var d=document.createElement("div"); d.textContent=s; return d.innerHTML; }
+
+  function renderItems(){
+    var tbl = document.getElementById("cmp-table"), body = document.getElementById("cmp-body"), empty = document.getElementById("cmp-empty");
+    body.innerHTML = "";
+    if(items.length === 0){ tbl.style.display="none"; empty.style.display="block"; return; }
+    tbl.style.display="table"; empty.style.display="none";
+    var rows = items.map(function(it,ix){ return {it:it, ix:ix}; });
+    if(sortState.key){
+      rows.sort(function(a,b){
+        var x=a.it[sortState.key], y=b.it[sortState.key];
+        if(sortState.key==="name"||sortState.key==="tax") return String(x).localeCompare(String(y))*sortState.dir;
+        if(sortState.key==="buy"||sortState.key==="sale"){ x=a.it.inputs[sortState.key]; y=b.it.inputs[sortState.key]; }
+        return (x-y)*sortState.dir;
+      });
+    }
+    var bestIdx = -1, best = -Infinity;
+    items.forEach(function(it,ix){ if(it.perday > best){ best = it.perday; bestIdx = ix; } });
+    rows.forEach(function(r){
+      var it = r.it, ix = r.ix;
+      var tr = document.createElement("tr");
+      if(ix === bestIdx && items.length > 1) tr.className = "best";
+      tr.innerHTML =
+        "<td>"+escapeHtml(it.name)+(ix===bestIdx&&items.length>1?" ★":"")+"</td>"+
+        "<td>"+fmt(it.inputs.buy)+" ₽</td>"+
+        "<td>"+fmt(it.inputs.sale)+" ₽</td>"+
+        '<td class="'+(it.net>=0?"pos":"neg")+'">'+fmt(it.net)+" ₽</td>"+
+        '<td class="'+(it.perday>=0?"pos":"neg")+'">'+fmt(it.perday)+" ₽</td>"+
+        "<td>"+pct0(it.roi)+"</td>"+
+        "<td>"+taxLabel(it.tax)+"</td>"+
+        '<td style="white-space:nowrap"><button class="del" data-edit="'+ix+'" title="Загрузить в форму" aria-label="Загрузить строку в форму для правки">✎</button><button class="del" data-ix="'+ix+'" title="Удалить" aria-label="Удалить строку">×</button></td>';
+      body.appendChild(tr);
+    });
+    bindRowActions();
+    scheduleHash();
+  }
+
+  document.getElementById("save-item").addEventListener("click", function(){
+    items.push(snapshot());
+    document.getElementById("itemname").value = "";
+    renderItems();
+  });
+  document.getElementById("export-items").addEventListener("click", function(){
+    var payload = {app:"navar-auto", version:1, exported:new Date().toISOString(), items:items};
+    var blob = new Blob([JSON.stringify(payload,null,2)], {type:"application/json"});
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "navar-auto-sdelki.json";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+  document.getElementById("import-items").addEventListener("click", function(){
+    document.getElementById("import-file").click();
+  });
+  document.getElementById("share-link").addEventListener("click", shareLink);
+  document.getElementById("adv-toggle").addEventListener("click", function(){
+    document.body.classList.toggle("expert");
+    this.textContent = document.body.classList.contains("expert") ? "Свернуть точную настройку ▴" : "Точная настройка: комиссия, продвижение, налоги ▾";
+  });
+  document.getElementById("export-card").addEventListener("click", function(){ exportCard("Навар со сделки", "Закуп " + fmt(val("buy")) + " ₽ → продажа " + fmt(val("sale")) + " ₽", [["Навар в день","perday"],["На вложенный ₽","roi"],["Потолок торга","maxbuy"],["Если зависнет","st-net"]]); });
+  if(window.__navarPendingItems){
+    window.__navarPendingItems.forEach(function(x){
+      if(x && x.i && typeof x.i === "object") items.push(computeItem(x.n, x.t, x.i));
+    });
+    delete window.__navarPendingItems;
+    renderItems();
+  }
+  document.getElementById("import-file").addEventListener("change", function(){
+    var f = this.files[0]; if(!f) return;
+    var r = new FileReader();
+    r.onload = function(){
+      try{
+        var data = JSON.parse(r.result);
+        if(data && data.app==="navar-auto" && Array.isArray(data.items)){
+          data.items.forEach(function(it){
+            if(it && typeof it === "object" && it.inputs && typeof it.inputs === "object"){
+              items.push(computeItem(it.name, it.tax, it.inputs));
+            }
+          });
+          renderItems();
+        } else { alert("Это не файл Навар.Авто. Выберите файл, сохранённый через «Экспорт в файл»."); }
+      }catch(e){ alert("Не удалось прочитать файл — он повреждён или имеет другой формат."); }
+    };
+    r.readAsText(f);
+    this.value = "";
+  });
+})();
+</script>
+</body>
+</html>
